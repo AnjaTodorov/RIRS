@@ -1,5 +1,9 @@
 # Domora – funkcionalnosti in obseg
 
+[01 Ideja in uporabniki](01-zasnova-resitve.md) · **02 Vloge in funkcionalnosti** · [03 Podatki in povezave](03-podatkovni-model.md) · [04 Arhitektura in tehnologije](04-arhitektura-in-tehnoloski-sklad.md)
+
+---
+
 ## Uporabniške vloge
 
 Vsak registriran uporabnik ima eno vlogo. Ob registraciji lahko izbere vlogo iskalca ali oglaševalca. Oglaševalec ima tudi vse pravice iskalca pri tujih oglasih, zato ne potrebuje dodatne vloge ali drugega računa. Administratorski račun se ustvari ob inicializaciji sistema in ga ni mogoče izbrati pri javni registraciji.
@@ -15,17 +19,31 @@ Uporabnik brez aplikacijskega profila lahko pregleduje javne oglase, pred objavo
 
 ### Pravice vlog
 
-| Vloga | Dovoljena dejanja | Omejitve |
-|---|---|---|
-| Iskalec nepremičnine | Filtriranje objavljenih oglasov, oddaja in spremljanje lastnih zahtev za ogled; po MVP tudi priljubljeni oglasi, primerjava, prijava neprimernega oglasa, zahteva za pogovor in sporočanje po sprejetju zahteve. | Ne objavlja oglasov, ne odloča o zahtevah drugih uporabnikov in ne vidi tujih zahtev ali pogovorov. |
-| Oglaševalec | Vse pravice iskalca pri tujih oglasih; priprava in oddaja lastnih oglasov, določanje terminov, odločanje o zahtevah za ogled, deaktivacija, označitev kot prodano ali oddano ter logični izbris lastnih oglasov; po MVP tudi sprejem ali zavrnitev zahtev za pogovor pri lastnih oglasih ter sporočanje. | Ne spreminja tujih oglasov, ne odobri objave, ne upravlja uporabniških računov, ne zahteva ogleda ali pogovora pri svojem oglasu in ne vidi pogovorov, v katerih ni udeleženec. |
-| Administrator | Odobritev ali zavrnitev oglasov z obrazložitvijo; v nadaljnjem razvoju obravnava prijav in onemogočanje računov. | Ne oddaja zahtev v imenu iskalcev, ne potrjuje ogledov namesto oglaševalca in nima dostopa do gesel v berljivi obliki. |
+#### Iskalec nepremičnine
+
+- **Lahko:** Filtriranje objavljenih oglasov, oddaja in spremljanje lastnih zahtev za ogled; po MVP tudi priljubljeni oglasi, primerjava, prijava neprimernega oglasa, zahteva za pogovor in sporočanje po sprejetju zahteve.
+- **Omejitve:** Ne objavlja oglasov, ne odloča o zahtevah drugih uporabnikov in ne vidi tujih zahtev ali pogovorov.
+
+#### Oglaševalec
+
+- **Lahko:** Vse pravice iskalca pri tujih oglasih; priprava in oddaja lastnih oglasov, določanje terminov, odločanje o zahtevah za ogled, deaktivacija, označitev kot prodano ali oddano ter logični izbris lastnih oglasov; po MVP tudi sprejem ali zavrnitev zahtev za pogovor pri lastnih oglasih ter sporočanje.
+- **Omejitve:** Ne spreminja tujih oglasov, ne odobri objave, ne upravlja uporabniških računov, ne zahteva ogleda ali pogovora pri svojem oglasu in ne vidi pogovorov, v katerih ni udeleženec.
+
+#### Administrator
+
+- **Lahko:** Odobritev ali zavrnitev oglasov z obrazložitvijo; v nadaljnjem razvoju obravnava prijav in onemogočanje računov.
+- **Omejitve:** Ne oddaja zahtev v imenu iskalcev, ne potrjuje ogledov namesto oglaševalca in nima dostopa do gesel v berljivi obliki.
 
 Neprijavljen obiskovalec lahko išče in pregleduje samo objavljene oglase. To je način dostopa, ne dodatna registrirana vloga.
 
+---
+
 ## Predvidene funkcionalnosti
 
-MVP pomeni prvo delujočo različico. Izbranih je **7 funkcionalnosti**, od katerih je **6 domensko specifičnih** (F02–F06 in F11). V opisih zahtev za ogled in pogovor izraz iskalec označuje uporabnika v vlogi iskalca ali oglaševalca, ki se zanima za tuj oglas.
+> **Obseg MVP:** 7 funkcionalnosti, od katerih je 6 domensko specifičnih (F02–F06 in F11). MVP pomeni prvo delujočo različico.
+ V opisih zahtev za ogled in pogovor izraz iskalec označuje uporabnika v vlogi iskalca ali oglaševalca, ki se zanima za tuj oglas.
+
+### Prva delujoča različica · MVP
 
 | ID | Funkcionalnost | Obseg |
 |---|---|---|
@@ -35,11 +53,16 @@ MVP pomeni prvo delujočo različico. Izbranih je **7 funkcionalnosti**, od kate
 | F04 | Iskanje objavljenih nepremičnin s kombiniranimi filtri po kraju, cenovnem razponu, površini, vrsti in namenu oglasa ter pregled podrobnosti. | **MVP – domenska** |
 | F05 | Oglaševalec določi termine ogledov, iskalec pa odda zahtevo za izbrani prihodnji termin; sistem preveri razpoložljivost in podvajanje zahtev. | **MVP – domenska** |
 | F06 | Oglaševalec potrdi ali zavrne zahtevo; iskalec spremlja status. Potrditev zasede termin, prepreči dvojno rezervacijo ter razkrije natančen naslov in morebitna navodila za zbirno mesto. | **MVP – domenska** |
+| F11 | Upravljanje življenjskega cikla oglasa: označitev kot neaktiven, prodan ali oddan oziroma logični izbris, umik iz javnega prikaza in preklic prihodnjih čakajočih ter potrjenih ogledov; po uvedbi sporočanja tudi zaprtje pogovorov ob ohranjeni zgodovini sporočil. | **MVP – domenska** |
+
+### Funkcionalnosti po MVP
+
+| ID | Funkcionalnost | Obseg |
+|---|---|---|
 | F07 | Shranjevanje oglasov med priljubljene za kasnejši pregled. | Po MVP |
 | F08 | Primerjava do treh nepremičnin po ceni, površini, vrsti in ceni na kvadratni meter; primerjajo se oglasi z istim namenom. | Po MVP |
 | F09 | Elektronska obvestila ob potrditvi ali zavrnitvi zahteve za ogled. | Po MVP |
 | F10 | Preklic lastne zahteve oziroma potrjenega ogleda pred začetkom termina in ponovna aktivacija istega preklicanega zapisa, če je termin še prihodnji in prost ter oglas aktiven. Preklic potrjenega ogleda sprosti termin. | Po MVP |
-| F11 | Upravljanje življenjskega cikla oglasa: označitev kot neaktiven, prodan ali oddan oziroma logični izbris, umik iz javnega prikaza in preklic prihodnjih čakajočih ter potrjenih ogledov; po uvedbi sporočanja tudi zaprtje pogovorov ob ohranjeni zgodovini sporočil. | **MVP – domenska** |
 | F12 | Prijava zavajajočega ali neprimernega oglasa z razlogom in administratorska obravnava prijave. | Po MVP |
 | F13 | Administratorsko onemogočanje in ponovno omogočanje uporabniških računov zaradi kršitev. | Po MVP |
 | F14 | Interno sporočanje: iskalec ali oglaševalec pri tujem objavljenem oglasu pošlje zahtevo za pogovor. Lastnik jo sprejme ali zavrne. Po sprejetju oba pošiljata sporočila in pregledujeta zgodovino; ob zaključku oglasa ostane samo dostop do zgodovine. Poslanih sporočil ni mogoče urejati ali brisati. | Po MVP |
@@ -60,6 +83,8 @@ MVP pomeni prvo delujočo različico. Izbranih je **7 funkcionalnosti**, od kate
 | `ACTIVE` | Oglaševalec je zahtevo sprejel; sporočanje je omogočeno. |
 | `REJECTED` | Oglaševalec je zahtevo zavrnil. |
 | `INACTIVE` | Pogovor je zaprt; zgodovina je dostopna, novih sporočil ni mogoče poslati. |
+
+---
 
 ## Pravila prve različice
 
@@ -96,9 +121,13 @@ MVP pomeni prvo delujočo različico. Izbranih je **7 funkcionalnosti**, od kate
 7. Oglaševalec lahko zahteva ogled tuje nepremičnine, nikoli lastne. Neaktivnega, zaključenega ali logično izbrisanega oglasa ni mogoče zahtevati ali potrjevati.
 8. Natančen naslov in morebitna navodila za zbirno mesto interesent prejme ob potrditvi, brez pogoja sprejetega pogovora.
 
+### Preklic in ponovna prijava · po MVP
+
 Po uvedbi F10 uporabnik lahko prekliče svojo zahtevo pred začetkom termina. Ob ponovni prijavi se isti zapis `CANCELLED` spremeni v `PENDING`, če je termin prihodnji, prost in oglas `PUBLISHED` brez `deleted_at`. Ponastavijo se `decided_at`, `decision_reason`, `meeting_instructions` in `cancelled_at`. Zavrnjene zahteve ni mogoče samostojno ponovno aktivirati; omejitev `UNIQUE(slot_id, seeker_id)` ostane veljavna.
 
-Primer: za isti termin sta oddani dve zahtevi. Ko oglaševalec potrdi prvo, sistem drugo zavrne. Ob hkratnih potrditvah podatkovna baza dovoli samo eno potrjeno zahtevo.
+> **Primer sočasnih zahtev:** Za isti termin sta oddani dve zahtevi. Ko oglaševalec potrdi prvo, sistem drugo zavrne. Ob hkratnih potrditvah podatkovna baza dovoli samo eno potrjeno zahtevo.
+
+---
 
 ## Kasnejše nadgradnje
 
@@ -113,6 +142,8 @@ Poleg funkcionalnosti F07–F10 in F12–F14 so možne naslednje nadgradnje:
 7. Koledarski izvoz potrjenih ogledov.
 8. Zgodovina administratorskih pregledov oglasa.
 
+---
+
 ## Izven obsega projekta (out of scope)
 
 - Plačila, rezervacijski pologi in obdelava bančnih podatkov.
@@ -121,6 +152,8 @@ Poleg funkcionalnosti F07–F10 in F12–F14 so možne naslednje nadgradnje:
 - Preverjanje lastništva in povezovanje z zemljiško knjigo.
 - Uvoz oglasov z drugih nepremičninskih portalov.
 - Namenska mobilna aplikacija; projekt vključuje odzivno spletno aplikacijo.
+
+---
 
 ## Meja prve delujoče različice
 
