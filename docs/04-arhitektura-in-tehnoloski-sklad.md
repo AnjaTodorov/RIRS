@@ -75,3 +75,7 @@ To je načrt lokalnega zagona; aplikacija pri tej nalogi še ni implementirana.
 - **Supabase Auth:** prevzame upravljanje prijavnih računov in sej, aplikacija pa določa poslovne vloge ter dovoljenja.
 - **Supabase Storage:** hrani fotografije zunaj baze; zasebna shramba in podpisane povezave omogočajo nadzor dostopa do neobjavljenih oglasov.
 - **Docker Compose:** poenoti lokalno izvajanje frontenda in backenda.
+
+## Zapisi arhitekturnih odločitev
+
+Razloge izbire, alternative in posledice posameznih odločitev dokumentirajo [ADR 0001–0007](adr/README.md). Ob spremembi sprejete odločitve dodamo nov ADR in označimo, kateri zapis nadomešča.
