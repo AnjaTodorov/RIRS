@@ -1,0 +1,38 @@
+# Odvisnosti in izhodi gradnje
+node_modules/
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+.vite/
+
+# Lokalne nastavitve in skrivnosti; vzorčne datoteke se verzionirajo
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Dnevniki in začasne datoteke
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+*.swp
+*~
+
+# Urejevalniki in operacijski sistem
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Lokalni podatki in fotografije med razvojem
+uploads/
+.supabase/
+supabase/.temp/
+supabase/.branches/
