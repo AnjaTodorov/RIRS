@@ -1,0 +1,22 @@
+{
+  "name": "domora-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "db:validate": "prisma validate",
+    "db:deploy": "prisma migrate deploy",
+    "db:status": "prisma migrate status",
+    "db:generate": "prisma generate",
+    "db:test": "prisma db execute --schema prisma/schema.prisma --file tests/database.sql"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "prisma": "6.19.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}
