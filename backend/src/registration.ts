@@ -41,7 +41,7 @@ export class RegistrationError extends Error {
 }
 
 export interface RegistrationDependencies {
-  emailExists(email: string): Promise<boolean>;
+  findAccount(email: string): Promise<{ confirmed: boolean } | null>;
   usernameExists(username: string): Promise<boolean>;
   signUp(input: RegistrationInput): Promise<{
     userId: string | null;
@@ -62,15 +62,21 @@ export function createRegistrationService(deps: RegistrationDependencies) {
       throw new RegistrationError(400, "Preverite vnesene podatke.", fields);
     }
     const input = parsed.data;
-    const [emailTaken, usernameTaken] = await Promise.all([
-      deps.emailExists(input.email),
+    const [account, usernameTaken] = await Promise.all([
+      deps.findAccount(input.email),
       deps.usernameExists(input.username),
     ]);
-    if (emailTaken)
+    if (account)
       throw new RegistrationError(
         409,
-        "Račun s tem e-poštnim naslovom že obstaja.",
-        { email: "E-poštni naslov je že uporabljen." },
+        account.confirmed
+          ? "Ta e-poštni naslov je že potrjen in račun že obstaja. Ponovna registracija ni potrebna."
+          : "Račun že obstaja in čaka na potrditev e-pošte. Uporabite zadnjo prejeto potrditveno povezavo.",
+        {
+          email: account.confirmed
+            ? "Ta naslov pripada že potrjenemu računu."
+            : "Ta naslov že čaka na potrditev.",
+        },
       );
     if (usernameTaken)
       throw new RegistrationError(409, "Uporabniško ime je že uporabljeno.", {
