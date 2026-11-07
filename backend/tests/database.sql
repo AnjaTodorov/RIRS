@@ -32,12 +32,28 @@ DECLARE
     suffix TEXT := gen_random_uuid()::text;
     table_name TEXT;
 BEGIN
-    INSERT INTO auth.users(id) VALUES (advertiser), (seeker_a), (seeker_b);
-    INSERT INTO public.profiles(id, first_name, last_name, username, phone_number, role)
-    VALUES
-        (advertiser, 'Test', 'Advertiser', 'advertiser-' || suffix, '000000000', 'ADVERTISER'),
-        (seeker_a, 'Test', 'Seeker A', 'seeker-a-' || suffix, '000000001', 'SEEKER'),
-        (seeker_b, 'Test', 'Seeker B', 'seeker-b-' || suffix, '000000002', 'SEEKER');
+    INSERT INTO auth.users(id, raw_user_meta_data) VALUES
+        (advertiser, jsonb_build_object('first_name', 'Test', 'last_name', 'Advertiser',
+            'username', 'advertiser-' || suffix, 'phone_number', '000000000', 'role', 'ADVERTISER')),
+        (seeker_a, jsonb_build_object('first_name', 'Test', 'last_name', 'Seeker A',
+            'username', 'seeker-a-' || suffix, 'phone_number', '000000001', 'role', 'SEEKER')),
+        (seeker_b, jsonb_build_object('first_name', 'Test', 'last_name', 'Seeker B',
+            'username', 'seeker-b-' || suffix, 'phone_number', '000000002', 'role', 'SEEKER'));
+
+    -- The trigger creates one profile per auth account and rejects privilege escalation.
+    IF (SELECT count(*) FROM public.profiles WHERE id IN (advertiser, seeker_a, seeker_b)) <> 3 THEN
+        RAISE EXCEPTION 'Signup must create a matching profile';
+    END IF;
+    PERFORM pg_temp.expect_rejected(format(
+        'INSERT INTO auth.users(id, raw_user_meta_data) VALUES (%L, %L::jsonb)',
+        gen_random_uuid(), '{"role":"ADMIN"}'), '23514');
+    PERFORM pg_temp.expect_rejected(format(
+        'INSERT INTO auth.users(id, raw_user_meta_data) VALUES (%L, %L::jsonb)',
+        gen_random_uuid(), '{"role":"SEEKER","first_name":"Test"}'), '23514');
+    PERFORM pg_temp.expect_rejected(format(
+        'INSERT INTO auth.users(id, raw_user_meta_data) VALUES (%L, %L::jsonb)',
+        gen_random_uuid(), jsonb_build_object('first_name', 'Test', 'last_name', 'Duplicate',
+            'username', 'seeker-a-' || suffix, 'phone_number', '000000003', 'role', 'SEEKER')), '23505');
 
     PERFORM pg_temp.expect_rejected(format(
         'INSERT INTO public.profiles VALUES (%L, %L, %L, %L, %L, %L)',

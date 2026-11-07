@@ -1,0 +1,24 @@
+{
+  "name": "domora",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others -n api,web \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "db:deploy": "npm run db:deploy -w backend",
+    "db:test": "npm run db:test -w backend",
+    "db:status": "npm run db:status -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "node": "^22.21.1"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}
