@@ -41,6 +41,13 @@ sporočilo po oddaji. V **Supabase → Authentication → Users** ter tabeli `pr
 mora obstajati po en povezan zapis. Nato preveri še podvojen e-poštni naslov,
 zasedeno uporabniško ime in manjkajoča polja.
 
+Račune aplikacije ustvarjaj prek obrazca Domora, ne prek gumba **Add user** v
+Supabase. Ta ne pošlje obveznih profilnih podatkov, zato sprožilec zavrne
+ustvarjanje računa in Supabase prikaže splošno napako ustvarjanja uporabnika.
+Za nastavitev povratne povezave uporabi **Authentication → URL Configuration**;
+razdelek **OAuth Server** je namenjen uporabi Supabase kot ponudnika prijave za
+druge aplikacije in ni potreben za registracijo z e-pošto in geslom.
+
 ## Preverjanje
 
 ```powershell
