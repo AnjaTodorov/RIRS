@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  SEEKER
+  ADVERTISER
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum ListingType {
+  SALE
+  RENT
+
+  @@map("listing_type")
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  INACTIVE
+  SOLD
+  RENTED
+
+  @@map("property_status")
+}
+
+enum ViewingRequestStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+
+  @@map("viewing_request_status")
+}
+
+/// The SQL migration adds the FK to Supabase-managed auth.users.
+/// Auth tables are deliberately not managed by Prisma.
+model Profile {
+  id         String   @id @db.Uuid
+  firstName  String   @map("first_name")
+  lastName   String   @map("last_name")
+  username   String   @unique
+  phoneNumber String  @map("phone_number")
+  role       UserRole
+
+  properties       Property[]       @relation("Advertiser")
+  reviewedProperties Property[]     @relation("Reviewer")
+  viewingRequests  ViewingRequest[]
+
+  @@map("profiles")
+}
+
+model Property {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  advertiserId   String         @map("advertiser_id") @db.Uuid
+  title          String         @default("")
+  description    String         @default("")
+  city           String         @default("")
+  publicLocation String         @default("") @map("public_location")
+  exactAddress   String         @default("") @map("exact_address")
+  propertyType   String         @default("") @map("property_type")
+  listingType    ListingType?   @map("listing_type")
+  price          Decimal?       @db.Decimal(14, 2)
+  areaM2         Decimal?       @map("area_m2") @db.Decimal(12, 2)
+  status         PropertyStatus @default(DRAFT)
+  reviewedBy     String?        @map("reviewed_by") @db.Uuid
+  reviewReason   String?        @map("review_reason")
+
+  advertiser Profile         @relation("Advertiser", fields: [advertiserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reviewer   Profile?        @relation("Reviewer", fields: [reviewedBy], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  photos     PropertyPhoto[]
+  slots      ViewingSlot[]
+
+  @@index([advertiserId])
+  @@index([reviewedBy])
+  @@index([status, city, listingType])
+  @@map("properties")
+}
+
+model PropertyPhoto {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  propertyId  String @map("property_id") @db.Uuid
+  storagePath String @unique @map("storage_path")
+  position    Int    @default(0)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([propertyId, position])
+  @@map("property_photos")
+}
+
+/// The migration adds an exclusion constraint for non-overlapping slots.
+model ViewingSlot {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  propertyId String   @map("property_id") @db.Uuid
+  startsAt   DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt     DateTime @map("ends_at") @db.Timestamptz(6)
+
+  property Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  requests ViewingRequest[]
+
+  @@index([propertyId, startsAt])
+  @@map("viewing_slots")
+}
+
+/// The migration adds a partial unique index for one CONFIRMED request per slot.
+model ViewingRequest {
+  id        String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slotId    String               @map("slot_id") @db.Uuid
+  seekerId  String               @map("seeker_id") @db.Uuid
+  status    ViewingRequestStatus @default(PENDING)
+  message   String?
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  decidedAt DateTime?            @map("decided_at") @db.Timestamptz(6)
+
+  slot   ViewingSlot @relation(fields: [slotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  seeker Profile     @relation(fields: [seekerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([slotId, seekerId])
+  @@index([seekerId, status])
+  @@map("viewing_requests")
+}

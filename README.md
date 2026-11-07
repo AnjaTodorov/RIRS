@@ -2,7 +2,10 @@
 
 Domora je spletna aplikacija za oglaševanje nepremičnin in usklajevanje ogledov. Iskalci pregledujejo oglase in zaprosijo za ogled, oglaševalci upravljajo oglase in termine, administrator pa pred objavo preveri oglase.
 
-Projekt je trenutno v fazi načrtovanja. Izvedbena koda in konfiguracija zagona še nista pripravljeni; mapi `frontend/` in `backend/` vsebujeta le datoteki `.gitkeep`.
+Pripravljena je začetna podatkovna shema MVP s petimi aplikacijskimi tabelami,
+verzionirano SQL migracijo in konfiguracijo Prisma. Navodila za pripravo baze
+in preverjanje omejitev so v [backend/README.md](backend/README.md).
+Frontend in REST API še nista implementirana.
 
 ## Predvidene tehnologije
 
