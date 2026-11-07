@@ -18,10 +18,11 @@ const frontendUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173/";
 const signupRedirectUrl = process.env.SIGNUP_REDIRECT_URL || frontendUrl;
 const app = createApp(
   {
-    async emailExists(email) {
-      const rows = await db.$queryRaw<{ exists: boolean }[]>`
-      SELECT EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = ${email}) AS exists`;
-      return rows[0].exists;
+    async findAccount(email) {
+      const rows = await db.$queryRaw<{ confirmed: boolean }[]>`
+        SELECT email_confirmed_at IS NOT NULL AS confirmed
+        FROM auth.users WHERE lower(email) = ${email} LIMIT 1`;
+      return rows[0] ?? null;
     },
     async usernameExists(username) {
       return !!(await db.profile.findUnique({

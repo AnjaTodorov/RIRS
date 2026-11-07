@@ -55,6 +55,13 @@ Za nove povezave API vedno poda `SIGNUP_REDIRECT_URL` oziroma `FRONTEND_URL`.
 Supabase mora ta naslov dovoljevati v **Authentication → URL Configuration →
 Redirect URLs**, sicer uporabi svojo nastavljeno vrednost Site URL.
 
+Potrditev naslova se izvede v Supabase pred preusmeritvijo v aplikacijo: tudi
+napaka na napačnem povratnem naslovu ne pomeni, da naslov ni bil potrjen.
+Ponovna registracija potrjenega računa ni potrebna. Brisanje vrstice `profiles`
+ne odstrani računa iz **Authentication → Users** in ne sproži novega sporočila.
+Za ponovni razvojni preizkus z istim naslovom mora biti odstranjen tudi račun
+iz Auth; profilov in računov ne briši za običajno uporabo aplikacije.
+
 ## Preverjanje
 
 ```powershell

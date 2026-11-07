@@ -20,7 +20,7 @@ function dependencies(
   overrides: Partial<RegistrationDependencies> = {},
 ): RegistrationDependencies {
   return {
-    emailExists: async () => false,
+    findAccount: async () => null,
     usernameExists: async () => false,
     signUp: async () => ({
       userId: "new-user",
@@ -87,7 +87,7 @@ test("US-01: rejects duplicate email without creating an account", async () => {
     409,
     valid,
     dependencies({
-      emailExists: async () => true,
+      findAccount: async () => ({ confirmed: true }),
       signUp: async () => {
         called = true;
         throw Error();
@@ -98,6 +98,30 @@ test("US-01: rejects duplicate email without creating an account", async () => {
 });
 test("US-01: rejects duplicate username", async () => {
   await rejects(409, valid, dependencies({ usernameExists: async () => true }));
+});
+test("US-01: distinguishes confirmed accounts from pending confirmation", async () => {
+  for (const confirmed of [true, false]) {
+    let signupCalled = false;
+    const service = createRegistrationService(
+      dependencies({
+        findAccount: async () => ({ confirmed }),
+        signUp: async () => {
+          signupCalled = true;
+          throw new Error("Must not sign up again");
+        },
+      }),
+    );
+    await assert.rejects(service(valid), (error: unknown) => {
+      assert.ok(error instanceof RegistrationError);
+      assert.equal(error.status, 409);
+      assert.match(
+        error.message,
+        confirmed ? /že potrjen/ : /čaka na potrditev/,
+      );
+      return true;
+    });
+    assert.equal(signupCalled, false);
+  }
 });
 test("US-01: handles obfuscated duplicate response from Supabase", async () => {
   await rejects(
@@ -160,7 +184,8 @@ test("US-01: translates Auth throttling and weak passwords", async () => {
 test("HTTP: returns validation, duplicate and success responses", async () => {
   const app = createApp(
     dependencies({
-      emailExists: async (email) => email === "taken@example.com",
+      findAccount: async (email) =>
+        email === "taken@example.com" ? { confirmed: true } : null,
     }),
   );
   const server = app.listen(0, "127.0.0.1");
