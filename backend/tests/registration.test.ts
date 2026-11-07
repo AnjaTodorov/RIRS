@@ -169,6 +169,10 @@ test("HTTP: returns validation, duplicate and success responses", async () => {
   assert.ok(address && typeof address !== "string");
   const base = `http://127.0.0.1:${address.port}`;
   try {
+    const redirect = await fetch(`${base}/`, { redirect: "manual" });
+    assert.equal(redirect.status, 302);
+    assert.equal(redirect.headers.get("location"), "http://127.0.0.1:5173/");
+    assert.equal((await fetch(`${base}/api/not-found`)).status, 404);
     assert.equal((await fetch(`${base}/api/health`)).status, 200);
     for (const [body, status] of [
       [{ ...valid, role: "ADMIN" }, 400],

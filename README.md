@@ -48,6 +48,13 @@ Za nastavitev povratne povezave uporabi **Authentication → URL Configuration**
 razdelek **OAuth Server** je namenjen uporabi Supabase kot ponudnika prijave za
 druge aplikacije in ni potreben za registracijo z e-pošto in geslom.
 
+Če stara potrditvena povezava odpre `http://localhost:3000/`, jo API preusmeri
+na frontend (`FRONTEND_URL`, privzeto `http://127.0.0.1:5173/`). Brskalnik prenese
+fragment potrditvene povezave na frontend, ta pa ga po obdelavi odstrani iz URL.
+Za nove povezave API vedno poda `SIGNUP_REDIRECT_URL` oziroma `FRONTEND_URL`.
+Supabase mora ta naslov dovoljevati v **Authentication → URL Configuration →
+Redirect URLs**, sicer uporabi svojo nastavljeno vrednost Site URL.
+
 ## Preverjanje
 
 ```powershell
