@@ -17,6 +17,7 @@ import {
   PropertyPage,
   AdminProperties,
 } from "./Listings";
+import { MyViewings } from "./Viewings";
 
 export function Login() {
   const { client, profile, loading, error: connectionError } = useSession();
@@ -165,9 +166,12 @@ function Shell() {
                 <Link to="/pregled">Pregled oglasov</Link>
               )}
               <Link to="/profil">{profile.firstName}</Link>
+              {profile.role !== "ADMIN" && (
+                <Link to="/moji-ogledi">Moji ogledi</Link>
+              )}
               <button
                 className="text-button"
-                onClick={() => client?.auth.signOut()}
+                onClick={() => client?.auth.signOut({ scope: "local" })}
               >
                 Odjava
               </button>
@@ -186,6 +190,7 @@ function Shell() {
         </p>
       )}
       <Routes>
+        <Route path="/moji-ogledi" element={<MyViewings />} />
         <Route path="/" element={<Catalog />} />
         <Route path="/moji-oglasi" element={<MyProperties />} />
         <Route path="/oglasi/:id/uredi" element={<ListingEditor />} />

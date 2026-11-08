@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "test": "tsx --test tests/*.test.ts",
     "test:integration": "tsx --test tests/mvp.integration.ts",
+    "test:browser": "tsx --test tests/mvp.browser.ts",
     "db:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",

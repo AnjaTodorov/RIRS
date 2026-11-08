@@ -43,8 +43,8 @@ varnostne napake v starejši tranzitivni odvisnosti konfiguracije Prisma.
 - Kombinacija termina in interesenta je enolična tudi po zavrnitvi zahteve.
 - Delni enolični indeks dopušča največ eno `CONFIRMED` zahtevo na termin.
 - RLS je vključen na vseh petih tabelah. Vlogi `anon` in `authenticated`
-  nimata neposrednega dostopa. Poslovni podatki bodo dostopni prek backenda,
-  ki bo preverjal vlogo in lastništvo ter oblikoval varen odgovor brez zasebnega naslova.
+  nimata neposrednega dostopa. Poslovni podatki so dostopni prek backenda,
+  ki preverja vlogo in lastništvo ter oblikuje varen odgovor brez zasebnega naslova.
 
 SQL migracija vsebuje dodatne omejitve in povezavo s `auth.users`, ki jih sama
 shema Prisma ne opisuje v celoti. Za naslednje spremembe pripravi pregledano
@@ -55,14 +55,41 @@ dovoljeni vlogi, zaseden e-poštni naslov in uporabniško ime ter pokliče Supab
 Auth z javnim ključem. Sprožilec ustvari profil in še na ravni baze zavrne
 nedovoljeno vlogo, manjkajoče podatke in podvojeno uporabniško ime. Napaka pri
 profilu razveljavi tudi ustvarjanje računa. Gesla upravlja izključno Supabase Auth.
-Vloge se kasneje preverjajo iz `profiles`, nikoli iz uporabniško spremenljivih
-metapodatkov Auth. Za prihodnjo inicializacijo administratorja bo treba najprej
-ustvariti veljaven račun in mu s privilegirano strežniško operacijo spremeniti vlogo.
+Vloge se preverjajo iz `profiles`, nikoli iz uporabniško spremenljivih
+metapodatkov Auth. Administratorja nastavimo s skriptom `admin:promote` za izrecno
+izbran že potrjen račun; navodila so v korenskem README.
 
-Preverjanje dovoljenj drugih API poti, statusni prehodi in prihodnji časi terminov
-bodo implementirani v naslednjih zgodbah.
-Potrditev zahteve z zavrnitvijo ostalih ter zaključek oglasa s preklicem
-prihodnjih ogledov zahtevata transakciji v backendu; sama shema teh tokov ne izvaja.
+API preverja dovoljenja, statusne prehode in prihodnje termine. Potrditev zahteve
+z zavrnitvijo ostalih ter zaključek oglasa s preklicem prihodnjih ogledov se
+izvedeta v transakcijah z zaklepom vrstice oglasa. Tako tudi sočasne zahteve
+ne povzročijo dvojne rezervacije ali nove rezervacije po zaključku oglasa.
+
+## API MVP
+
+Zaščitene poti pričakujejo `Authorization: Bearer <access_token>` iz Supabase.
+Vsako tako zahtevo preverimo z Auth `getUser`, nato vlogo preberemo iz baze.
+Odzivi poslovnega API uporabljajo `Cache-Control: no-store`.
+
+| Pot | Dostop in namen |
+|---|---|
+| `GET /api/auth/config` | Javni URL in javni ključ za frontend Auth |
+| `GET/PATCH /api/profile` | Lastni profil; role in ID nista dovoljeni polji popravka |
+| `GET /api/properties` | Javni PUBLISHED oglasi; city, listingType, propertyType, minPrice/maxPrice, minArea/maxArea |
+| `POST /api/properties` | Oglaševalec ustvari DRAFT |
+| `GET/PATCH /api/properties/:id` | Javni podatki objavljenega oglasa oziroma lastnik/admin; ureja samo lastnik DRAFT/REJECTED |
+| `POST /api/properties/:id/submit` | Lastnik popoln DRAFT/REJECTED odda v pregled |
+| `GET /api/my/properties` | Lastni oglasi |
+| `GET /api/admin/properties` | Administratorjev seznam PENDING_REVIEW |
+| `POST /api/properties/:id/review` | ADMIN; decision approve/reject, pri zavrnitvi neprazen reason |
+| `POST /api/properties/:id/photos` | Lastnik; multipart polje photo, JPG/PNG/WebP do 5 MB, največ deset |
+| `DELETE /api/properties/:id/photos/:photoId` | Lastnik urejanega oglasa odstrani povezavo in datoteko |
+| `GET /api/properties/:id/photos/:photoId/url` | Podpisana povezava za dovoljenega gledalca; zasebni bucket |
+| `GET/POST /api/properties/:id/slots` | Javni prihodnji termini; dodajanje samo lastniku PUBLISHED oglasa |
+| `POST /api/properties/:id/requests` | Prijavljen interesent tujega oglasa; slotId in neobvezno message |
+| `GET /api/properties/:id/requests` | Samo lastnik; prejete zahteve s terminom in interesentom |
+| `POST /api/properties/:id/requests/:requestId/decision` | Lastnik; decision confirm/reject |
+| `GET /api/my/requests` in `/:id` | Samo lastne zahteve; exactAddress samo pri CONFIRMED + PUBLISHED |
+| `POST /api/properties/:id/close` | Lastnik; status INACTIVE ali namenu ustrezni SOLD/RENTED |
 
 ## Preverjanje omejitev
 

@@ -298,11 +298,11 @@
 4. KO je oglas zaključen, MORA sistem vse njegove prihodnje čakajoče in potrjene oglede preklicati s statusom zahtev `CANCELLED`.
 5. ČE zaključek zahteva uporabnik, ki ni lastnik, ali oglas ni `PUBLISHED`, POTEM MORA sistem spremembo zavrniti.
 
-## Odprta vprašanja
+## Odločitve za implementacijo
 
-O naslednjih podrobnostih odloči nosilec projekta pred implementacijo povezanih zgodb:
+Dogovorjene nastavitve in uporabljene privzete vrednosti:
 
-- **Registracija (US-01):** Ali je pred uporabo računa obvezna potrditev e-poštnega naslova?
-- **Fotografije (US-05, US-06):** Kateri formati in velikosti datotek so dovoljeni, koliko fotografij je mogoče dodati in ali je vsaj ena obvezna ob oddaji oglasa?
-- **Termini (US-12):** Ali sta določena najmanjše oziroma največje trajanje termina in minimalen čas med zahtevo ter začetkom ogleda? Kateri časovni pas se uporablja pri prikazu?
-- **Zaključeni oglasi (US-18–US-20):** Kateri podatki oglasa ostanejo v zgodovini zahtev po zaključku? Natančen naslov interesentu po zaključku ni več dostopen.
+- **Registracija (US-01):** Potrjevanje e-pošte sledi nastavitvi Email providerja v razvojnem Supabase projektu.
+- **Fotografije (US-05, US-06):** JPG/PNG/WebP, do 5 MB, največ 10 na oglas. Fotografije niso obvezne ob oddaji.
+- **Termini (US-12):** Vnos in prikaz v `Europe/Ljubljana`, shranjevanje v TIMESTAMPTZ. Začetek mora biti v prihodnosti, konec po začetku; dodatne omejitve trajanja niso določene.
+- **Zaključeni oglasi (US-18–US-20):** V zgodovini ostanejo javni podatki oglasa, termin in status zahteve; natančen naslov po zaključku ni dostopen.

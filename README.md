@@ -2,7 +2,7 @@
 
 Domora je spletna aplikacija za oglaševanje nepremičnin in usklajevanje ogledov. Iskalci pregledujejo oglase in zaprosijo za ogled, oglaševalci upravljajo oglase in termine, administrator pa pred objavo preveri oglase.
 
-Pripravljena sta podatkovna baza in prva funkcionalnost MVP: **US-01 – registracija**.
+Implementiran je MVP z uporabniškimi zgodbami **US-01–US-20**.
 Obiskovalec izbere vlogo iskalca ali oglaševalca, izpolni kontaktne podatke in
 ustvari račun Supabase Auth s povezanim profilom. Administratorska registracija
 ni dovoljena. Implementirani sta tudi prijava in zaščiten dostop (US-02) ter
@@ -11,6 +11,9 @@ registracijo; prijavljen uporabnik lahko odpre profil in se odjavi.
 Oglaševalci lahko pripravljajo oglase s fotografijami in jih oddajo v pregled;
 administrator jih odobri ali zavrne z razlogom (US-04–US-09). Javni katalog
 prikazuje samo objavljene oglase s kombiniranimi filtri (US-10–US-11).
+Oglaševalec določa termine, interesenti oddajo zahteve, lastnik pa potrdi enega
+interesenta in zavrne ostale (US-12–US-18). Ob umiku, prodaji ali oddaji se
+prihodnje čakajoče in potrjene zahteve prekličejo, naslov pa skrije (US-19–US-20).
 
 ### Račun administratorja in fotografije
 
@@ -93,6 +96,7 @@ npm run build
 npm run db:test
 npm run db:status
 npm run test:integration
+npm run test:browser
 ```
 
 Testi API in obrazca uporabljajo nadomestne odgovore Auth, zato ne pošiljajo
@@ -107,6 +111,34 @@ Podrobnosti baze so v [backend/README.md](backend/README.md).
 ustvari začasne račune SQL z enoličnimi identifikatorji, se prijavi z geslom,
 preveri tok oglasa in zasebne fotografije ter po preizkusu odstrani svoje račune,
 oglase in datoteke. Ta preizkus ne pošilja e-pošte in ne spreminja obstoječih računov.
+
+`npm run test:browser` izvede tok prek dejanskega vmesnika z začasnimi računi
+oglaševalca, administratorja in interesenta. Zažene lasten frontend na prostih
+vratih in ne ustavlja obstoječega razvojnega strežnika. Na Windows uporablja
+nameščeni Microsoft Edge; na drugih sistemih pred prvo uporabo izvedi
+`npx playwright install chromium`. Posnetki so v prezrti mapi `test-results/`.
+
+## Preizkus celotnega MVP
+
+1. Registriraj in potrdi račune oglaševalca ter iskalca. Za administracijo uporabi
+   ločen potrjen račun in zgornji ukaz `admin:promote`.
+2. Oglaševalec v **Moji oglasi** ustvari osnutek, vnese podatke, doda fotografije
+   in izbere **Oddaj v pregled**. Osnutki in čakajoči oglasi niso javni.
+3. Administrator v **Pregled oglasov** oglas odobri ali zavrne z razlogom.
+   Lastnik lahko zavrnjen oglas popravi in ponovno odda.
+4. Po odobritvi je oglas v javnem katalogu. Lastnik na podrobnostih doda prihodnje,
+   neprekrivajoče se termine. Vnos in prikaz uporabljata `Europe/Ljubljana`;
+   neobstoječ čas ob pomladnem premiku ure je zavrnjen.
+5. Iskalec izbere termin in odda zahtevo. V **Moji ogledi** spremlja njen status.
+   Oglaševalec lahko pri tujih oglasih nastopa tudi kot interesent.
+6. Lastnik v **Prejete zahteve** potrdi eno zahtevo. Druge čakajoče zahteve za isti
+   termin se v isti transakciji zavrnejo. Za osvežitev interesent izbere
+   **Osveži statuse**. Potrjeni interesent vidi tudi natančen naslov.
+7. Lastnik lahko oglas umakne ali ga skladno z namenom označi kot prodanega/oddanega.
+   Potrdi opozorilo o preklicu prihodnjih ogledov. Javni prikaz in novi ogledi se
+   onemogočijo, prihodnje aktivne zahteve se prekličejo, pretekla zgodovina ostane.
+
+Pregled preverjanja vseh zgodb je v [preverjanju MVP](docs/08-preverjanje-mvp.md).
 
 ## Predvidene tehnologije
 

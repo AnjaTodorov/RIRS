@@ -12,11 +12,13 @@
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "test:integration": "npm run test:integration -w backend",
+    "test:browser": "npm run test:browser -w backend",
     "db:deploy": "npm run db:deploy -w backend",
     "db:test": "npm run db:test -w backend",
     "db:status": "npm run db:status -w backend"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "concurrently": "^9.2.1",
     "node": "^22.21.1"
   },
