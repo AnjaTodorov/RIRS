@@ -70,7 +70,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           auth: { detectSessionInUrl: false },
         });
         setClient(auth);
-        unsubscribe = auth.auth.onAuthStateChange((_event, value) => {
+        const subscription = auth.auth.onAuthStateChange((_event, value) => {
           if (active) {
             setSession(value);
             if (!value) {
@@ -78,7 +78,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
               setLoading(false);
             }
           }
-        }).data.subscription.unsubscribe;
+        }).data.subscription;
+        unsubscribe = () => subscription.unsubscribe();
       })
       .catch(() => {
         if (active) {

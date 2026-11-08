@@ -7,6 +7,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { request, useSession, ApiError } from "./session";
+import { ViewingPanel, OwnerRequests, CloseListing } from "./Viewings";
 
 export type Listing = {
   id: string;
@@ -36,32 +37,43 @@ export const labels: Record<string, string> = {
 };
 export function useResource<T>(path: string) {
   const { session } = useSession();
-  const [value, setValue] = useState<T | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const identity = path + "|" + (session?.access_token || "public");
+  const [state, setState] = useState<{
+    key: string;
+    value: T | null;
+    error: string;
+    loading: boolean;
+  }>({ key: "", value: null, error: "", loading: true });
   const [version, setVersion] = useState(0);
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
+    setState((previous) =>
+      previous.key === identity
+        ? { ...previous, loading: true, error: "" }
+        : { key: identity, value: null, error: "", loading: true },
+    );
     request<T>(path, session?.access_token)
       .then((v) => {
-        if (active) setValue(v);
+        if (active)
+          setState({ key: identity, value: v, error: "", loading: false });
       })
       .catch((e) => {
         if (active) {
-          setValue(null);
-          setError(e.message);
+          setState({
+            key: identity,
+            value: null,
+            error: e.message,
+            loading: false,
+          });
         }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
       });
     return () => {
       active = false;
     };
   }, [path, session?.access_token, version]);
-  return { value, error, loading, reload: () => setVersion((v) => v + 1) };
+  const current =
+    state.key === identity ? state : { value: null, error: "", loading: true };
+  return { ...current, reload: () => setVersion((v) => v + 1) };
 }
 export function Photo({
   propertyId,
@@ -398,7 +410,11 @@ export function ListingEditor() {
         ))}
         <label>
           Namen
-          <select name="listingType" defaultValue={p.listingType || ""}>
+          <select
+            aria-label="Namen"
+            name="listingType"
+            defaultValue={p.listingType || ""}
+          >
             <option value="">Izberite namen</option>
             <option value="SALE">Prodaja</option>
             <option value="RENT">Najem</option>
@@ -545,6 +561,23 @@ export function PropertyPage() {
         </form>
       )}
       <p role="status">{message}</p>
+      {p.status === "PUBLISHED" && (
+        <ViewingPanel propertyId={p.id} isOwner={isOwner} />
+      )}
+      {isOwner && (
+        <OwnerRequests
+          key={p.status}
+          propertyId={p.id}
+          active={p.status === "PUBLISHED"}
+        />
+      )}
+      {isOwner && p.status === "PUBLISHED" && (
+        <CloseListing
+          propertyId={p.id}
+          listingType={p.listingType}
+          onClosed={data.reload}
+        />
+      )}
     </article>
   );
 }

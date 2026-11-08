@@ -25,13 +25,13 @@ const auth = (token?: string) =>
       : {}),
   });
 const png = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6d1sAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNI6ckjCTGMahjVMHw1AAAIeF4Qd8WWYAAAAABJRU5ErkJggg==",
   "base64",
 );
 
 test(
   "MVP: real Auth, profile isolation, listings, private storage, moderation and combined search",
-  { timeout: 180000 },
+  { timeout: 300000 },
   async () => {
     const ids = Array.from({ length: 5 }, () => randomUUID());
     const tokens: string[] = [];
@@ -95,6 +95,17 @@ test(
         );
         assert.ok(login.data.session);
         tokens.push(login.data.session.access_token);
+      }
+      if (process.env.DOMORA_BROWSER_TEST === "1") {
+        const { browserFlow } = await import("./browser-flow");
+        await browserFlow({
+          apiUrl: base.replace(/\/api$/, ""),
+          emails,
+          password,
+          prefix,
+          png,
+        });
+        return;
       }
       assert.equal((await call("/profile")).status, 401);
       assert.equal((await call("/profile", 0)).body.role, "ADVERTISER");
@@ -166,7 +177,7 @@ test(
         201,
         "Real private Storage upload must succeed",
       );
-      const photo = (await upload.json()) as any;
+      let photo = (await upload.json()) as any;
       assert.equal(
         (await call(`/properties/${propertyId}/photos/${photo.id}/url`)).status,
         404,
@@ -186,6 +197,53 @@ test(
         ).status,
         403,
       );
+      assert.equal(
+        (
+          await call(
+            `/properties/${propertyId}/photos/${photo.id}`,
+            0,
+            "DELETE",
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/photos/${photo.id}/url`, 0))
+          .status,
+        404,
+      );
+      async function uploadPhoto(body: FormData) {
+        return fetch(`${base}/properties/${propertyId}/photos`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tokens[0]}` },
+          body,
+        });
+      }
+      const invalidImage = new FormData();
+      invalidImage.set(
+        "photo",
+        new Blob(["not an image"], { type: "image/png" }),
+        "invalid.png",
+      );
+      assert.equal((await uploadPhoto(invalidImage)).status, 415);
+      const oversized = new FormData();
+      oversized.set(
+        "photo",
+        new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: "image/png" }),
+        "large.png",
+      );
+      assert.equal((await uploadPhoto(oversized)).status, 400);
+      const replacement = await uploadPhoto(form);
+      assert.equal(replacement.status, 201);
+      photo = await replacement.json();
+      for (let i = 0; i < 8; i++)
+        assert.equal((await uploadPhoto(form)).status, 201);
+      const limitRace = await Promise.all([
+        uploadPhoto(form),
+        uploadPhoto(form),
+      ]);
+      assert.deepEqual(limitRace.map((r) => r.status).sort(), [201, 409]);
+      assert.equal(await db.propertyPhoto.count({ where: { propertyId } }), 10);
       assert.equal(
         (await call(`/properties/${propertyId}/submit`, 0, "POST")).status,
         200,
@@ -269,8 +327,350 @@ test(
         ).status,
         409,
       );
+      const future = Date.now() + 2 * 86400000;
+      const at = (hours: number) =>
+        new Date(future + hours * 3600000).toISOString();
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/slots`, 1, "POST", {
+            startsAt: at(0),
+            endsAt: at(1),
+          })
+        ).status,
+        403,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/slots`, 0, "POST", {
+            startsAt: at(1),
+            endsAt: at(0),
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/slots`, 0, "POST", {
+            startsAt: new Date(Date.now() - 3600000).toISOString(),
+            endsAt: at(0),
+          })
+        ).status,
+        400,
+      );
+      const slot = (
+        await call(`/properties/${propertyId}/slots`, 0, "POST", {
+          startsAt: at(0),
+          endsAt: at(1),
+        })
+      ).body;
+      assert.ok(slot.id);
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/slots`, 0, "POST", {
+            startsAt: at(0.5),
+            endsAt: at(1.5),
+          })
+        ).status,
+        409,
+      );
+      const adjacent = (
+        await call(`/properties/${propertyId}/slots`, 0, "POST", {
+          startsAt: at(1),
+          endsAt: at(2),
+        })
+      ).body;
+      assert.ok(adjacent.id);
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, null, "POST", {
+            slotId: slot.id,
+          })
+        ).status,
+        401,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 0, "POST", {
+            slotId: slot.id,
+          })
+        ).status,
+        403,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 4, "POST", {
+            slotId: slot.id,
+          })
+        ).status,
+        403,
+      );
+      const requestA = (
+        await call(`/properties/${propertyId}/requests`, 2, "POST", {
+          slotId: slot.id,
+          message: "First request",
+        })
+      ).body;
+      const requestB = (
+        await call(`/properties/${propertyId}/requests`, 3, "POST", {
+          slotId: slot.id,
+        })
+      ).body;
+      const advertiserRequest = (
+        await call(`/properties/${propertyId}/requests`, 1, "POST", {
+          slotId: slot.id,
+        })
+      ).body;
+      assert.equal(requestA.status, "PENDING");
+      assert.equal(advertiserRequest.status, "PENDING");
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 2, "POST", {
+            slotId: slot.id,
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        "exactAddress" in
+          (await call(`/my/requests/${requestA.id}`, 2)).body.property,
+        false,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/requests`, 1)).status,
+        403,
+      );
+      assert.equal(
+        (
+          await call(
+            `/properties/${propertyId}/requests/${requestA.id}/decision`,
+            1,
+            "POST",
+            { decision: "confirm" },
+          )
+        ).status,
+        403,
+      );
+      const competing = await Promise.all(
+        [requestA, requestB].map((r) =>
+          call(
+            `/properties/${propertyId}/requests/${r.id}/decision`,
+            0,
+            "POST",
+            { decision: "confirm" },
+          ),
+        ),
+      );
+      assert.deepEqual(competing.map((r) => r.status).sort(), [200, 409]);
+      const confirmed = await db.viewingRequest.findMany({
+        where: { slotId: slot.id, status: "CONFIRMED" },
+      });
+      assert.equal(confirmed.length, 1);
+      const winner = confirmed[0].seekerId === ids[2] ? 2 : 3;
+      assert.equal(
+        (await call(`/my/requests/${confirmed[0].id}`, winner)).body.property
+          .exactAddress,
+        listing.exactAddress,
+      );
+      assert.equal(
+        (await call(`/my/requests/${confirmed[0].id}`, winner === 2 ? 3 : 2))
+          .status,
+        404,
+      );
+      assert.equal(
+        await db.viewingRequest.count({
+          where: { slotId: slot.id, status: "REJECTED" },
+        }),
+        2,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 2, "POST", {
+            slotId: slot.id,
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/slots`)).body.find(
+          (s: any) => s.id === slot.id,
+        ).available,
+        false,
+      );
+      const rejected = (
+        await call(`/properties/${propertyId}/requests`, 2, "POST", {
+          slotId: adjacent.id,
+        })
+      ).body;
+      assert.equal(
+        (
+          await call(
+            `/properties/${propertyId}/requests/${rejected.id}/decision`,
+            0,
+            "POST",
+            { decision: "reject" },
+          )
+        ).body.status,
+        "REJECTED",
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/slots`)).body.find(
+          (s: any) => s.id === adjacent.id,
+        ).available,
+        true,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 2, "POST", {
+            slotId: adjacent.id,
+          })
+        ).status,
+        409,
+      );
+      const pending = (
+        await call(`/properties/${propertyId}/requests`, 3, "POST", {
+          slotId: adjacent.id,
+        })
+      ).body;
+      const past = await db.viewingSlot.create({
+        data: {
+          propertyId,
+          startsAt: new Date(Date.now() - 7200000),
+          endsAt: new Date(Date.now() - 3600000),
+        },
+      });
+      const pastRequest = await db.viewingRequest.create({
+        data: { slotId: past.id, seekerId: ids[2], status: "CONFIRMED" },
+      });
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/close`, 1, "POST", {
+            status: "INACTIVE",
+          })
+        ).status,
+        403,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/close`, 0, "POST", {
+            status: "RENTED",
+          })
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/close`, 0, "POST", {
+            status: "INACTIVE",
+          })
+        ).body.status,
+        "INACTIVE",
+      );
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: confirmed[0].id },
+          })
+        ).status,
+        "CANCELLED",
+      );
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: pending.id },
+          })
+        ).status,
+        "CANCELLED",
+      );
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: rejected.id },
+          })
+        ).status,
+        "REJECTED",
+      );
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: pastRequest.id },
+          })
+        ).status,
+        "CONFIRMED",
+      );
+      assert.equal(
+        "exactAddress" in
+          (await call(`/my/requests/${confirmed[0].id}`, winner)).body.property,
+        false,
+      );
+      assert.equal(
+        "exactAddress" in
+          (await call(`/my/requests/${pastRequest.id}`, 2)).body.property,
+        false,
+      );
+      assert.equal((await call(`/properties/${propertyId}`)).status, 404);
+      assert.equal((await call(`/properties/${propertyId}/slots`)).status, 404);
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 2, "POST", {
+            slotId: adjacent.id,
+          })
+        ).status,
+        409,
+      );
+      for (const [listingType, status] of [
+        ["SALE", "SOLD"],
+        ["RENT", "RENTED"],
+      ]) {
+        const next = (
+          await call("/properties", 0, "POST", { ...listing, listingType })
+        ).body;
+        assert.equal(
+          (
+            await call(`/properties/${next.id}/slots`, 0, "POST", {
+              startsAt: at(0),
+              endsAt: at(1),
+            })
+          ).status,
+          409,
+        );
+        await call(`/properties/${next.id}/submit`, 0, "POST");
+        await call(`/properties/${next.id}/review`, 4, "POST", {
+          decision: "approve",
+        });
+        const nextSlot = (
+          await call(`/properties/${next.id}/slots`, 0, "POST", {
+            startsAt: at(0),
+            endsAt: at(1),
+          })
+        ).body;
+        const nextRequest = (
+          await call(`/properties/${next.id}/requests`, 2, "POST", {
+            slotId: nextSlot.id,
+          })
+        ).body;
+        const race = await Promise.all([
+          call(
+            `/properties/${next.id}/requests/${nextRequest.id}/decision`,
+            0,
+            "POST",
+            { decision: "confirm" },
+          ),
+          call(`/properties/${next.id}/close`, 0, "POST", { status }),
+        ]);
+        assert.equal(race[1].status, 200);
+        assert.ok([200, 409].includes(race[0].status));
+        assert.equal(
+          (
+            await db.viewingRequest.findUniqueOrThrow({
+              where: { id: nextRequest.id },
+            })
+          ).status,
+          "CANCELLED",
+        );
+        assert.equal((await call(`/properties/${next.id}`)).status, 404);
+      }
       console.log(
-        "Real Auth login, database ownership, Storage upload/read, moderation, private-address exclusion and filters passed.",
+        "Real Auth and Storage, full listing lifecycle, concurrent bookings, request privacy, and atomic closure checks passed.",
       );
     } finally {
       const properties = await db.property.findMany({

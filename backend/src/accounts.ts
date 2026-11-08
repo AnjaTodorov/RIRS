@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { RegistrationError as HttpError } from "./registration";
 import { createListingsRouter } from "./listings";
+import { createViewingsRouter } from "./viewings";
 
 export interface ApiDependencies {
   db: PrismaClient;
@@ -31,6 +32,10 @@ const profileInput = z
 
 export function createApiRouter(deps: ApiDependencies) {
   const router = Router();
+  router.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
   router.get("/auth/config", (_req, res) =>
     res.json({ url: deps.supabaseUrl, key: deps.publicKey }),
   );
@@ -65,5 +70,6 @@ export function createApiRouter(deps: ApiDependencies) {
     res.json(await deps.db.profile.update({ where: { id: user.id }, data }));
   });
   router.use(createListingsRouter(deps));
+  router.use(createViewingsRouter(deps));
   return router;
 }
