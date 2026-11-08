@@ -19,6 +19,14 @@ export type Profile = {
   phoneNumber: string;
   role: "SEEKER" | "ADVERTISER" | "ADMIN";
 };
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public fields: Record<string, string> = {},
+  ) {
+    super(message);
+  }
+}
 type AuthState = {
   client: SupabaseClient | null;
   profile: Profile | null;
@@ -42,7 +50,8 @@ export async function request<T = any>(
     headers.set("Content-Type", "application/json");
   const response = await fetch(`/api${path}`, { ...options, headers });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.message || "Zahteva ni uspela.");
+  if (!response.ok)
+    throw new ApiError(body.message || "Zahteva ni uspela.", body.fields);
   return body;
 }
 export function SessionProvider({ children }: { children: ReactNode }) {

@@ -8,6 +8,27 @@ ustvari račun Supabase Auth s povezanim profilom. Administratorska registracija
 ni dovoljena. Implementirani sta tudi prijava in zaščiten dostop (US-02) ter
 urejanje lastnega profila (US-03). Na začetni strani sta povezavi na prijavo in
 registracijo; prijavljen uporabnik lahko odpre profil in se odjavi.
+Oglaševalci lahko pripravljajo oglase s fotografijami in jih oddajo v pregled;
+administrator jih odobri ali zavrne z razlogom (US-04–US-09). Javni katalog
+prikazuje samo objavljene oglase s kombiniranimi filtri (US-10–US-11).
+
+### Račun administratorja in fotografije
+
+Najprej registriraj in potrdi poseben račun. Nato v korenu izrecno določi njegov naslov:
+
+```powershell
+npm run admin:promote -- --email vas-admin@example.com
+```
+
+Ukaz spremeni vlogo samo izbranega potrjenega računa. Ob naslednjem nalaganju
+aplikacije se prikaže administratorski pregled. Običajni uporabnik svoje vloge
+ne more spremeniti prek obrazca ali API.
+
+Migracije pripravijo zasebni bucket `domora-properties` in pravila dostopa.
+Fotografije: JPG/PNG/WebP, do 5 MB, največ 10 na oglas; pri oddaji niso obvezne.
+Backend preveri vsebino datoteke in lastništvo. Fotografije neobjavljenega oglasa
+vidita lastnik in administrator; objavljene so dostopne obiskovalcem prek
+kratkotrajnih podpisanih povezav. Za ta tok ni potreben skrivni ključ Storage.
 
 ## Lokalni zagon
 
@@ -71,6 +92,7 @@ npm test
 npm run build
 npm run db:test
 npm run db:status
+npm run test:integration
 ```
 
 Testi API in obrazca uporabljajo nadomestne odgovore Auth, zato ne pošiljajo
@@ -80,6 +102,11 @@ uporabniških imen ter omejitve ogledov. Testni računi in podatki se razveljavi
 z `ROLLBACK`. Samo izvajanje migracij trajno spremeni shemo.
 
 Podrobnosti baze so v [backend/README.md](backend/README.md).
+
+`npm run test:integration` dodatno preveri dejanski Supabase Auth in Storage:
+ustvari začasne račune SQL z enoličnimi identifikatorji, se prijavi z geslom,
+preveri tok oglasa in zasebne fotografije ter po preizkusu odstrani svoje račune,
+oglase in datoteke. Ta preizkus ne pošilja e-pošte in ne spreminja obstoječih računov.
 
 ## Predvidene tehnologije
 

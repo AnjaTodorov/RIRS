@@ -3,6 +3,7 @@ import type { PrismaClient, Profile } from "@prisma/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { RegistrationError as HttpError } from "./registration";
+import { createListingsRouter } from "./listings";
 
 export interface ApiDependencies {
   db: PrismaClient;
@@ -63,5 +64,6 @@ export function createApiRouter(deps: ApiDependencies) {
     const data = profileInput.parse(req.body);
     res.json(await deps.db.profile.update({ where: { id: user.id }, data }));
   });
+  router.use(createListingsRouter(deps));
   return router;
 }

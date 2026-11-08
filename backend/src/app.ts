@@ -3,6 +3,7 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import multer from "multer";
 import {
   createRegistrationService,
   RegistrationError,
@@ -74,13 +75,15 @@ export function createApp(
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
+        res.status(409).json({
+          message:
+            "Ta zapis že obstaja. Preverite uporabniško ime ali zahtevo.",
+          fields: { username: "Uporabniško ime mora biti enolično." },
+        });
+      } else if (error instanceof multer.MulterError) {
         res
-          .status(409)
-          .json({
-            message:
-              "Ta zapis že obstaja. Preverite uporabniško ime ali zahtevo.",
-            fields: { username: "Uporabniško ime mora biti enolično." },
-          });
+          .status(400)
+          .json({ message: "Izberite eno fotografijo, veliko največ 5 MB." });
       } else if (error instanceof SyntaxError && "body" in error) {
         res.status(400).json({ message: "Neveljavna zahteva JSON." });
       } else if (
