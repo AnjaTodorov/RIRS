@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { createApp } from "./app";
+import { createApiRouter } from "./accounts";
 
 config({ path: resolve(__dirname, "../../.env"), quiet: true });
 const publicKey =
@@ -16,6 +17,17 @@ if (!process.env.DATABASE_URL || !process.env.SUPABASE_URL || !publicKey) {
 const db = new PrismaClient();
 const frontendUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173/";
 const signupRedirectUrl = process.env.SIGNUP_REDIRECT_URL || frontendUrl;
+const auth = (token?: string) =>
+  createClient(process.env.SUPABASE_URL!, publicKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+    ...(token
+      ? { global: { headers: { Authorization: `Bearer ${token}` } } }
+      : {}),
+  });
 const app = createApp(
   {
     async findAccount(email) {
@@ -71,7 +83,15 @@ const app = createApp(
       }));
     },
   },
-  { frontendUrl },
+  {
+    frontendUrl,
+    apiRouter: createApiRouter({
+      db,
+      auth,
+      supabaseUrl: process.env.SUPABASE_URL!,
+      publicKey,
+    }),
+  },
 );
 const port = Number(process.env.PORT || 3000);
 const server = app.listen(port, "127.0.0.1", () =>

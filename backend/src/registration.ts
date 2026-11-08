@@ -98,14 +98,16 @@ export function createRegistrationService(deps: RegistrationDependencies) {
           username: "Izberite drugo uporabniško ime.",
         });
       }
-      if (
-        ["over_email_send_rate_limit", "over_request_rate_limit"].includes(
-          result.errorCode,
-        )
-      ) {
+      if (result.errorCode === "over_email_send_rate_limit") {
         throw new RegistrationError(
           429,
-          "Preveč poskusov. Počakajte nekaj minut in poskusite znova.",
+          "Supabase trenutno omejuje pošiljanje potrditvenih e-poštnih sporočil. Poskusite pozneje.",
+        );
+      }
+      if (result.errorCode === "over_request_rate_limit") {
+        throw new RegistrationError(
+          429,
+          "Supabase trenutno omejuje registracijske zahteve. Poskusite pozneje.",
         );
       }
       if (result.errorCode === "weak_password")

@@ -1,0 +1,129 @@
+.application {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 32px 64px;
+}
+.app-header {
+  min-height: 94px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dce1d8;
+  gap: 20px;
+}
+.app-header nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.app-header a {
+  text-decoration: none;
+}
+.app-header nav a:hover {
+  text-decoration: underline;
+}
+.application button {
+  background: #285d4c;
+  color: white;
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font: inherit;
+}
+.application button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.application .text-button {
+  background: transparent;
+  color: #285d4c;
+  padding: 0;
+}
+.account-card {
+  max-width: 540px;
+  margin: 55px auto;
+  background: white;
+  border: 1px solid #dce1d8;
+  border-radius: 16px;
+  padding: 34px;
+}
+.account-card h1,
+.hero h1 {
+  font-family: Manrope, sans-serif;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+.account-card > p {
+  color: #69766d;
+  line-height: 1.8;
+}
+.stack {
+  display: grid;
+  gap: 16px;
+}
+.stack label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+}
+.application input,
+.application select,
+.application textarea {
+  font: inherit;
+  padding: 11px;
+  border: 1px solid #cbd5c7;
+  border-radius: 6px;
+  background: white;
+  max-width: 100%;
+  color: #243a32;
+}
+.application input:focus,
+.application textarea:focus,
+.application select:focus {
+  outline: 2px solid #b5c9a7;
+  outline-offset: 2px;
+}
+.hero {
+  padding: 60px 0 30px;
+}
+.hero h1 {
+  font-size: clamp(30px, 5vw, 52px);
+  margin: 15px 0;
+}
+.registration-login {
+  text-align: center;
+  padding: 0 20px 30px;
+  font-size: 14px;
+}
+.notice {
+  padding: 15px;
+  background: #fff3ee;
+  border: 1px solid #e7c5b9;
+  border-radius: 8px;
+}
+.account-card [role="status"] {
+  margin: 0;
+}
+@media (max-width: 650px) {
+  .application {
+    padding: 0 18px 35px;
+  }
+  .app-header {
+    align-items: flex-start;
+    padding: 20px 0;
+  }
+  .app-header nav {
+    gap: 12px;
+    font-size: 12px;
+    justify-content: flex-end;
+  }
+  .account-card {
+    padding: 24px;
+    margin: 30px auto;
+  }
+  .hero {
+    padding-top: 35px;
+  }
+}

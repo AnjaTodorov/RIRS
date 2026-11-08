@@ -1,10 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { Registration } from "./Registration";
+import { App } from "./App";
 import "./styles.css";
+
+const confirmation = new URLSearchParams(window.location.hash.slice(1));
+if (confirmation.get("type") === "signup" || confirmation.has("error")) {
+  window.history.replaceState(null, "", "/registracija" + window.location.hash);
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Registration />
+    <App />
   </React.StrictMode>,
 );

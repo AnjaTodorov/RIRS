@@ -225,3 +225,35 @@ test("HTTP: returns validation, duplicate and success responses", async () => {
     );
   }
 });
+test("HTTP: local development allows repeated attempts; production still limits them", async () => {
+  for (const registrationRateLimit of [false, true]) {
+    const server = createApp(dependencies(), { registrationRateLimit }).listen(
+      0,
+      "127.0.0.1",
+    );
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    try {
+      for (let attempt = 1; attempt <= 11; attempt++) {
+        const response = await fetch(
+          `http://127.0.0.1:${address.port}/api/auth/register`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          },
+        );
+        assert.equal(
+          response.status,
+          registrationRateLimit && attempt > 10 ? 429 : 400,
+        );
+        await response.arrayBuffer();
+      }
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
+  }
+});
