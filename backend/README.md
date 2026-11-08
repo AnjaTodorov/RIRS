@@ -92,7 +92,9 @@ ne vrača. Registracija uporabnika še ne prijavi; prijava je del US-02.
 Napake: `400` za neveljavne podatke, `409` za zaseden naslov ali uporabniško ime,
 `429` za omejitev števila poskusov in `503` za nedosegljivo storitev. Napake
 polj so v objektu `fields`. API omeji telo zahteve na 16 kB in registracijo na
-10 poskusov na 15 minut na naslov IP. V produkciji bo za več strežniških instanc
+10 poskusov na 15 minut na naslov IP samo pri `NODE_ENV=production`; pri lokalnem
+razvoju je ta omejitev izključena. Neodvisne omejitve Supabase Auth in pošiljanja
+e-pošte še vedno veljajo; aplikacija jih ne more izključiti. V produkciji bo za več strežniških instanc
 potrebna skupna shramba omejitev.
 
 `npm test` v korenu preveri storitev, HTTP pot in obrazec. SQL testi dodatno

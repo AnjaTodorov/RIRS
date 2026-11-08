@@ -1,6 +1,8 @@
 import express from "express";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
+import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import {
   createRegistrationService,
   RegistrationError,
@@ -9,7 +11,11 @@ import {
 
 export function createApp(
   deps: RegistrationDependencies,
-  { frontendUrl = "http://127.0.0.1:5173/" } = {},
+  {
+    frontendUrl = "http://127.0.0.1:5173/",
+    registrationRateLimit = process.env.NODE_ENV === "production",
+    apiRouter = undefined as express.Router | undefined,
+  } = {},
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -24,6 +30,7 @@ export function createApp(
   app.post(
     "/api/auth/register",
     rateLimit({
+      skip: () => !registrationRateLimit,
       windowMs: 15 * 60 * 1000,
       limit: 10,
       standardHeaders: "draft-8",
@@ -40,6 +47,7 @@ export function createApp(
       }
     },
   );
+  if (apiRouter) app.use("/api", apiRouter);
   app.use((_req, res) => {
     res.status(404).json({ message: "Pot ne obstaja." });
   });
@@ -54,6 +62,25 @@ export function createApp(
         res
           .status(error.status)
           .json({ message: error.message, fields: error.fields });
+      } else if (error instanceof z.ZodError) {
+        const fields = Object.fromEntries(
+          error.issues.map((issue) => [
+            String(issue.path[0] || "form"),
+            "Preverite vrednost tega polja.",
+          ]),
+        );
+        res.status(400).json({ message: "Preverite vnesene podatke.", fields });
+      } else if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        res
+          .status(409)
+          .json({
+            message:
+              "Ta zapis že obstaja. Preverite uporabniško ime ali zahtevo.",
+            fields: { username: "Uporabniško ime mora biti enolično." },
+          });
       } else if (error instanceof SyntaxError && "body" in error) {
         res.status(400).json({ message: "Neveljavna zahteva JSON." });
       } else if (

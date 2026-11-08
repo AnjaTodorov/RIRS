@@ -5,7 +5,9 @@ Domora je spletna aplikacija za oglaševanje nepremičnin in usklajevanje ogledo
 Pripravljena sta podatkovna baza in prva funkcionalnost MVP: **US-01 – registracija**.
 Obiskovalec izbere vlogo iskalca ali oglaševalca, izpolni kontaktne podatke in
 ustvari račun Supabase Auth s povezanim profilom. Administratorska registracija
-ni dovoljena. Preostale funkcionalnosti, vključno s prijavo US-02, sledijo.
+ni dovoljena. Implementirani sta tudi prijava in zaščiten dostop (US-02) ter
+urejanje lastnega profila (US-03). Na začetni strani sta povezavi na prijavo in
+registracijo; prijavljen uporabnik lahko odpre profil in se odjavi.
 
 ## Lokalni zagon
 
