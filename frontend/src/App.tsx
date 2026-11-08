@@ -10,6 +10,13 @@ import {
 import { Registration } from "./Registration";
 import { SessionProvider, useSession, request } from "./session";
 import "./app.css";
+import {
+  Catalog,
+  MyProperties,
+  ListingEditor,
+  PropertyPage,
+  AdminProperties,
+} from "./Listings";
 
 export function Login() {
   const { client, profile, loading, error: connectionError } = useSession();
@@ -151,6 +158,12 @@ function Shell() {
           <Link to="/">Nepremičnine</Link>
           {profile ? (
             <>
+              {profile.role === "ADVERTISER" && (
+                <Link to="/moji-oglasi">Moji oglasi</Link>
+              )}
+              {profile.role === "ADMIN" && (
+                <Link to="/pregled">Pregled oglasov</Link>
+              )}
               <Link to="/profil">{profile.firstName}</Link>
               <button
                 className="text-button"
@@ -173,24 +186,13 @@ function Shell() {
         </p>
       )}
       <Routes>
+        <Route path="/" element={<Catalog />} />
+        <Route path="/moji-oglasi" element={<MyProperties />} />
+        <Route path="/oglasi/:id/uredi" element={<ListingEditor />} />
+        <Route path="/nepremicnine/:id" element={<PropertyPage />} />
+        <Route path="/pregled" element={<AdminProperties />} />
         <Route path="/prijava" element={<Login />} />
         <Route path="/profil" element={<ProfilePage />} />
-        <Route
-          path="/"
-          element={
-            <section className="hero">
-              <span className="eyebrow">VAŠ NASLEDNJI KORAK</span>
-              <h1>Prostor za vaše načrte.</h1>
-              <p>
-                {loading
-                  ? "Nalaganje …"
-                  : profile
-                    ? `Dobrodošli, ${profile.firstName}.`
-                    : "Poiščite svoj naslednji dom."}
-              </p>
-            </section>
-          }
-        />
         <Route
           path="*"
           element={

@@ -7,9 +7,11 @@
     "frontend"
   ],
   "scripts": {
+    "admin:promote": "npm run admin:promote -w backend --",
     "dev": "concurrently --kill-others -n api,web \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
+    "test:integration": "npm run test:integration -w backend",
     "db:deploy": "npm run db:deploy -w backend",
     "db:test": "npm run db:test -w backend",
     "db:status": "npm run db:status -w backend"
