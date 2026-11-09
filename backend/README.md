@@ -77,6 +77,7 @@ Odzivi poslovnega API uporabljajo `Cache-Control: no-store`.
 | `GET /api/properties` | Javni PUBLISHED oglasi; city, listingType, propertyType, minPrice/maxPrice, minArea/maxArea |
 | `POST /api/properties` | Oglaševalec ustvari DRAFT |
 | `GET/PATCH /api/properties/:id` | Javni podatki objavljenega oglasa oziroma lastnik/admin; ureja samo lastnik DRAFT/REJECTED |
+| `POST /api/properties/:id/edit` | Lastnik vrne svoj PUBLISHED v DRAFT pred urejanjem; oglas je skrit do ponovne odobritve, termini in zahteve ostanejo |
 | `POST /api/properties/:id/submit` | Lastnik popoln DRAFT/REJECTED odda v pregled |
 | `GET /api/my/properties` | Lastni oglasi |
 | `GET /api/admin/properties` | Administratorjev seznam PENDING_REVIEW |

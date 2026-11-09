@@ -70,6 +70,8 @@
 2. KO oglaševalec v osnutek shrani naslov, opis, kraj, javno lokacijo, natančni naslov, vrsto nepremičnine, namen `SALE`/`RENT`, ceno in površino, MORA sistem ohraniti vnesene podatke.
 3. DOKLER ima oglas status `DRAFT`, MORA sistem preprečiti njegov prikaz v javnih rezultatih iskanja.
 4. ČE ustvarjanje osnutka zahteva uporabnik brez vloge oglaševalca ali spreminjanje zahteva uporabnik, ki ni lastnik, POTEM MORA sistem poseg zavrniti.
+5. KO lastnik potrdi urejanje objavljenega oglasa, MORA sistem pred spremembami vrniti oglas iz `PUBLISHED` v `DRAFT` in odstraniti prejšnjo odobritev. Podatki, fotografije, termini in zahteve ostanejo shranjeni.
+6. DOKLER spremenjeni oglas ni ponovno oddan in odobren, MORA ostati skrit iz javne ponudbe, fotografije in natančen naslov pa morajo ostati dostopni samo pooblaščenemu lastniku oziroma administratorju. Obstoječe zahteve se pri začetku urejanja ne prekličejo.
 
 ## US-05 – Dodajanje fotografij oglasa
 

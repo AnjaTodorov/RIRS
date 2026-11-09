@@ -17,6 +17,9 @@ const requestInclude = {
 } as const;
 function requestView(value: any) {
   const { exactAddress, ...property } = value.slot.property;
+  const underReview = ["DRAFT", "PENDING_REVIEW", "REJECTED"].includes(
+    property.status,
+  );
   return {
     id: value.id,
     status: value.status,
@@ -28,12 +31,28 @@ function requestView(value: any) {
       startsAt: value.slot.startsAt,
       endsAt: value.slot.endsAt,
     },
-    property: {
-      ...property,
-      ...(value.status === "CONFIRMED" && property.status === "PUBLISHED"
-        ? { exactAddress }
-        : {}),
-    },
+    // Existing applicants retain their appointment history, but may not read
+    // unapproved edits through the personal-requests endpoint.
+    property: underReview
+      ? {
+          id: property.id,
+          status: property.status,
+          title: "Oglas je začasno v urejanju",
+          description: "",
+          city: "",
+          publicLocation: "",
+          propertyType: "",
+          listingType: null,
+          price: null,
+          areaM2: null,
+          photos: [],
+        }
+      : {
+          ...property,
+          ...(value.status === "CONFIRMED" && property.status === "PUBLISHED"
+            ? { exactAddress }
+            : {}),
+        },
   };
 }
 export function createViewingsRouter(deps: ApiDependencies) {
