@@ -3,6 +3,9 @@
 Domora je spletna aplikacija za oglaševanje nepremičnin in usklajevanje ogledov. Iskalci pregledujejo oglase in zaprosijo za ogled, oglaševalci upravljajo oglase in termine, administrator pa pred objavo preveri oglase.
 
 Implementiran je MVP z uporabniškimi zgodbami **US-01–US-20**.
+Naloge in napredek so na [GitHub Project boardu Domora – MVP](https://github.com/users/AnjaTodorov/projects/6).
+Preslikava sprejemnih kriterijev na implementacijo in teste je v
+[preverjanju MVP](docs/08-preverjanje-mvp.md).
 Obiskovalec izbere vlogo iskalca ali oglaševalca, izpolni kontaktne podatke in
 ustvari račun Supabase Auth s povezanim profilom. Administratorska registracija
 ni dovoljena. Implementirani sta tudi prijava in zaščiten dostop (US-02) ter
@@ -14,6 +17,21 @@ prikazuje samo objavljene oglase s kombiniranimi filtri (US-10–US-11).
 Oglaševalec določa termine, interesenti oddajo zahteve, lastnik pa potrdi enega
 interesenta in zavrne ostale (US-12–US-18). Ob umiku, prodaji ali oddaji se
 prihodnje čakajoče in potrjene zahteve prekličejo, naslov pa skrije (US-19–US-20).
+
+### Uporabniški vmesnik
+
+Začetna stran `/` predstavlja Domoro, javna ponudba s filtri pa je na
+`/nepremicnine`. Prijavljeni uporabnik odpre osebni pregled na `/racun`;
+navigacija se prilagodi vlogi iskalca, oglaševalca ali administratorja.
+Vmesnik vključuje prilagodljive nadzorne plošče, urejevalnik oglasa s predogledom,
+galerijo, mobilne filtre in potrditvena okna za pomembne odločitve.
+Lastnik lahko pri objavljenem oglasu izbere **Uredi oglas → Začni urejanje**.
+Oglas se začasno umakne iz javne ponudbe in vrne v osnutek; termini in zahteve
+ostanejo shranjeni. Po spremembah ga mora ponovno oddati v pregled.
+Šele administratorjeva odobritev ponovno objavi podatke in fotografije.
+Fotografije posameznih oglasov vedno izvirajo iz njihovih dejanskih zapisov.
+Uredniške fotografije in pisave se nalagajo lokalno; viri in licence so navedeni
+v [frontend/public/assets/CREDITS.md](frontend/public/assets/CREDITS.md).
 
 ### Račun administratorja in fotografije
 

@@ -108,10 +108,14 @@ async function visibleProperty(
     return property;
   if (property.status !== "PUBLISHED")
     throw new HttpError(404, "Oglas ni objavljen.");
-  return deps.db.property.findUniqueOrThrow({
-    where: { id: propertyId },
+  const published = await deps.db.property.findFirst({
+    // Recheck visibility in the same query that reads the public fields: the
+    // owner may have started editing since the initial authorization read.
+    where: { id: propertyId, status: "PUBLISHED" },
     select: publicSelect,
   });
+  if (!published) throw new HttpError(404, "Oglas ni objavljen.");
+  return published;
 }
 const numericFilter = z.preprocess(
   (v) => (v === "" ? undefined : v),
@@ -193,17 +197,34 @@ export function createListingsRouter(deps: ApiDependencies) {
   router.post("/properties", async (req, res) => {
     const user = viewer(res, ["ADVERTISER"]);
     const data = draftInput.parse(req.body);
-    res
-      .status(201)
-      .json(
-        await deps.db.property.create({
-          data: { ...data, advertiserId: user.id, status: "DRAFT" },
-        }),
-      );
+    res.status(201).json(
+      await deps.db.property.create({
+        data: { ...data, advertiserId: user.id, status: "DRAFT" },
+      }),
+    );
   });
   router.get("/properties/:id", async (req, res) =>
     res.json(await visibleProperty(deps, res, id(req.params.id))),
   );
+  router.post("/properties/:id/edit", async (req, res) => {
+    viewer(res, ["ADVERTISER"]);
+    res.json(
+      await lockedProperty(deps, id(req.params.id), async (tx, p) => {
+        owner(res, p);
+        if (p.status !== "PUBLISHED")
+          throw new HttpError(
+            409,
+            "V osnutek lahko vrnete samo objavljen oglas.",
+          );
+        // Hide the listing before any field or photo can change. Reuse the
+        // normal submission/review flow; viewing slots and requests are retained.
+        return tx.property.update({
+          where: { id: p.id },
+          data: { status: "DRAFT", reviewedBy: null, reviewReason: null },
+        });
+      }),
+    );
+  });
   router.patch("/properties/:id", async (req, res) => {
     viewer(res, ["ADVERTISER"]);
     const data = draftInput.parse(req.body);

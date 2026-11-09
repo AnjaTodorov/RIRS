@@ -531,6 +531,181 @@ test(
           slotId: adjacent.id,
         })
       ).body;
+      // Published edits must pass through a private draft and a fresh review.
+      for (const [actor, status] of [
+        [null, 401],
+        [1, 403],
+        [2, 403],
+        [4, 403],
+      ] as const)
+        assert.equal(
+          (await call(`/properties/${propertyId}/edit`, actor, "POST")).status,
+          status,
+        );
+      const editingRace = await Promise.all([
+        call(`/properties/${propertyId}/edit`, 0, "POST"),
+        call(`/properties/${propertyId}/edit`, 0, "POST"),
+      ]);
+      assert.deepEqual(editingRace.map((r) => r.status).sort(), [200, 409]);
+      const editing = (await call(`/properties/${propertyId}`, 0)).body;
+      assert.equal(editing.status, "DRAFT");
+      assert.equal(editing.reviewedBy, null);
+      assert.equal(editing.reviewReason, null);
+      assert.equal(editing.title, listing.title);
+      assert.equal((await call(`/properties/${propertyId}`)).status, 404);
+      assert.equal((await call(`/properties?city=${prefix}`)).body.length, 0);
+      assert.equal((await call(`/properties/${propertyId}/slots`)).status, 404);
+      assert.equal(
+        (await call(`/properties/${propertyId}/photos/${photo.id}/url`)).status,
+        404,
+      );
+      const duringEdit = (await call(`/my/requests/${confirmed[0].id}`, winner))
+        .body;
+      assert.equal(duringEdit.status, "CONFIRMED");
+      assert.equal("exactAddress" in duringEdit.property, false);
+      assert.equal(duringEdit.property.title, "Oglas je začasno v urejanju");
+      assert.deepEqual(duringEdit.property.photos, []);
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: pending.id },
+          })
+        ).status,
+        "PENDING",
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/requests`, 1, "POST", {
+            slotId: adjacent.id,
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/review`, 4, "POST", {
+            decision: "approve",
+          })
+        ).status,
+        409,
+      );
+      const revisedAddress = "REVISED-PRIVATE-" + prefix;
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}`, 0, "PATCH", {
+            title: "",
+            price: 125000,
+            exactAddress: revisedAddress,
+          })
+        ).status,
+        200,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/submit`, 0, "POST")).status,
+        400,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}`, 0, "PATCH", {
+            title: "Updated " + prefix,
+          })
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await call(
+            `/properties/${propertyId}/photos/${photo.id}`,
+            0,
+            "DELETE",
+          )
+        ).status,
+        200,
+      );
+      const revisedPhoto = await uploadPhoto(form);
+      assert.equal(revisedPhoto.status, 201);
+      photo = await revisedPhoto.json();
+      assert.equal(
+        (await call(`/properties/${propertyId}/photos/${photo.id}/url`)).status,
+        404,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/submit`, 0, "POST")).body.status,
+        "PENDING_REVIEW",
+      );
+      assert.equal((await call(`/properties/${propertyId}`)).status, 404);
+      for (const path of [`/my/requests/${confirmed[0].id}`, "/my/requests"]) {
+        const privateHistory = JSON.stringify((await call(path, winner)).body);
+        assert.equal(privateHistory.includes("Updated " + prefix), false);
+        assert.equal(privateHistory.includes(revisedAddress), false);
+        assert.equal(privateHistory.includes('"price":"125000"'), false);
+      }
+      assert.ok(
+        (await call("/admin/properties", 4)).body.some(
+          (p: any) => p.id === propertyId,
+        ),
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/edit`, 0, "POST")).status,
+        409,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}`, 0, "PATCH", {
+            title: "Bypass review",
+          })
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/review`, 4, "POST", {
+            decision: "reject",
+            reason: "Dopolnite opis.",
+          })
+        ).body.status,
+        "REJECTED",
+      );
+      assert.equal((await call(`/properties/${propertyId}`)).status, 404);
+      assert.equal(
+        (await call(`/properties/${propertyId}/submit`, 0, "POST")).body.status,
+        "PENDING_REVIEW",
+      );
+      assert.equal(
+        (
+          await call(`/properties/${propertyId}/review`, 4, "POST", {
+            decision: "approve",
+          })
+        ).body.status,
+        "PUBLISHED",
+      );
+      const revisedPublic = (await call(`/properties/${propertyId}`)).body;
+      assert.equal(revisedPublic.title, "Updated " + prefix);
+      assert.equal(Number(revisedPublic.price), 125000);
+      assert.equal("exactAddress" in revisedPublic, false);
+      assert.equal(
+        (await call(`/properties/${propertyId}/photos/${photo.id}/url`)).status,
+        200,
+      );
+      assert.equal(
+        (await call(`/my/requests/${confirmed[0].id}`, winner)).body.property
+          .exactAddress,
+        revisedAddress,
+      );
+      assert.equal(
+        (await call(`/properties/${propertyId}/slots`)).body.find(
+          (s: any) => s.id === slot.id,
+        ).available,
+        false,
+      );
+      assert.equal(
+        (
+          await db.viewingRequest.findUniqueOrThrow({
+            where: { id: pending.id },
+          })
+        ).status,
+        "PENDING",
+      );
       const past = await db.viewingSlot.create({
         data: {
           propertyId,
@@ -609,6 +784,10 @@ test(
       );
       assert.equal((await call(`/properties/${propertyId}`)).status, 404);
       assert.equal((await call(`/properties/${propertyId}/slots`)).status, 404);
+      assert.equal(
+        (await call(`/properties/${propertyId}/edit`, 0, "POST")).status,
+        409,
+      );
       assert.equal(
         (
           await call(`/properties/${propertyId}/requests`, 2, "POST", {

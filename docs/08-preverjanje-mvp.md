@@ -8,7 +8,7 @@ Preverjanje vloge, lastništva in statusnih prehodov velja tudi za neposredni AP
 | US-01 | Registracija iskalca/oglaševalca in atomski profil | Validacija, prepoved ADMIN, podvojeni podatki, napake Auth; SQL sprožilec; ročna potrditev e-pošte |
 | US-02 | Prijava, obnova seje, odjava in zaščiten API | Pravilno/napačno geslo; dejanski Auth in preverjanje tokena; brskalniška prijava/odjava |
 | US-03 | Samo lastni kontaktni podatki | Lastništvo, prepoved vloge/ID, obvezna polja in podvojeno uporabniško ime |
-| US-04 | Osnutek DRAFT z lastnikom iz seje | Nepopoln osnutek, shranjevanje, prepoved tujega urejanja in javnega prikaza |
+| US-04 | Osnutek DRAFT z lastnikom iz seje; urejanje objavljenega oglasa z vrnitvijo v DRAFT | Nepopoln osnutek, shranjevanje, prepoved tujega urejanja in javnega prikaza; sočasen začetek urejanja, ponovna odobritev, ohranitev ogledov in zasebnost med urejanjem |
 | US-05 | Nalaganje, predogled in odstranitev fotografij | Dejanski zasebni Storage, podpisan dostop, lastništvo in brskalniški predogled |
 | US-06 | Popoln oglas v PENDING_REVIEW | Manjkajoča polja zavrnjena; čakajoči oglas ni javen |
 | US-07 | Odobritev v PUBLISHED | Vloga ADMIN, začetni status, javni prikaz po odobritvi |
@@ -46,6 +46,9 @@ pošiljajo potrditvenih sporočil. Posnetki ne vsebujejo pravih uporabniških po
   začetka in konca po začetku ni dodatne omejitve trajanja.
 - Zgodovina ohrani javne podatke oglasa in status. Po zaključku ni natančnega
   naslova, tudi če je pretekla zahteva ostala potrjena.
+- Pri ponovnem urejanju objavljenega oglasa termini in zahteve ostanejo
+  shranjeni. Interesent do ponovne odobritve vidi le status urejanja, ne pa
+  neodobrenih podatkov, fotografij ali natančnega naslova.
 - Administrator ne ureja tujih oglasov in ne odloča o ogledih namesto lastnika.
 - Poslovne tabele so zaščitene pred neposrednim PostgREST dostopom. Storage ima
   namenska pravila za lastnikove datoteke in fotografije javno objavljenih oglasov.

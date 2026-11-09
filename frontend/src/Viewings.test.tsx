@@ -43,3 +43,39 @@ it("US-18 shows the private address only when supplied by the authorized API", a
   );
   expect(await screen.findByText("Zasebni naslov 1")).toBeVisible();
 });
+for (const [requestStatus, propertyStatus] of [
+  ["PENDING", "PUBLISHED"],
+  ["REJECTED", "PUBLISHED"],
+  ["CANCELLED", "PUBLISHED"],
+  ["CONFIRMED", "INACTIVE"],
+  ["CONFIRMED", "SOLD"],
+  ["CONFIRMED", "RENTED"],
+]) {
+  it(`US-18 hides the exact address for ${requestStatus} requests on ${propertyStatus} listings`, async () => {
+    vi.mocked(request).mockResolvedValue([
+      {
+        id: "private",
+        status: requestStatus,
+        slot: { startsAt: "2027-01-15T10:00Z", endsAt: "2027-01-15T11:00Z" },
+        property: {
+          id: "p",
+          title: "Zasebnost ogleda",
+          publicLocation: "Maribor",
+          status: propertyStatus,
+          exactAddress: "Naslov, ki mora ostati zaseben",
+        },
+      },
+    ]);
+    render(
+      <MemoryRouter>
+        <MyViewings />
+      </MemoryRouter>,
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Zasebnost ogleda" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("Naslov, ki mora ostati zaseben"),
+    ).not.toBeInTheDocument();
+  });
+}

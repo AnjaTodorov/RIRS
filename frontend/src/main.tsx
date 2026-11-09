@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import "./styles.css";
+import "./app.css";
 
 const confirmation = new URLSearchParams(window.location.hash.slice(1));
 if (confirmation.get("type") === "signup" || confirmation.has("error")) {
