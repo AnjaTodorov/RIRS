@@ -11,9 +11,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
-    "react-router-dom": "^7.9.5",
+    "lucide-react": "^1.70.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

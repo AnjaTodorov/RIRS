@@ -1,7 +1,7 @@
 import { chromium, expect } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 export async function browserFlow({
@@ -62,6 +62,54 @@ export async function browserFlow({
       viewport: { width: 1365, height: 1000 },
     });
     const ownerPage = await context.newPage();
+    const browserErrors: string[] = [];
+    context.on("page", (page) =>
+      page.on("pageerror", (error) => browserErrors.push(error.message)),
+    );
+    ownerPage.on("pageerror", (error) => browserErrors.push(error.message));
+    async function capture(page: typeof ownerPage, name: string) {
+      const previous = page.viewportSize();
+      await mkdir(resolve(__dirname, "../../test-results/redesign"), {
+        recursive: true,
+      });
+      for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.evaluate(() => document.fonts.ready);
+        await expect
+          .poll(() => page.locator(".loading-state, .skeleton").count(), {
+            timeout: 15000,
+          })
+          .toBe(0);
+        await expect
+          .poll(() => page.locator(".photo-loading").count(), {
+            timeout: 15000,
+          })
+          .toBe(0);
+        await page.evaluate(async () => {
+          document.documentElement.style.scrollBehavior = "auto";
+          window.scrollTo(0, 0);
+          (document.activeElement as HTMLElement)?.blur();
+          for (const img of document.images) img.loading = "eager";
+          await Promise.all(
+            Array.from(document.images).map((img) =>
+              img.decode().catch(() => {}),
+            ),
+          );
+        });
+        await page.screenshot({
+          path: resolve(
+            __dirname,
+            `../../test-results/redesign/${name}-${width}.png`,
+          ),
+          fullPage: true,
+        });
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth),
+          `${name}: horizontal overflow at ${width}px`,
+        ).toBeLessThanOrEqual(width);
+      }
+      if (previous) await page.setViewportSize(previous);
+    }
     async function login(page: typeof ownerPage, index: number) {
       await page.goto(origin + "/prijava");
       await page
@@ -72,11 +120,15 @@ export async function browserFlow({
       await expect(
         page.getByRole("button", { name: "Odjava", exact: true }),
       ).toBeVisible({ timeout: 15000 });
+      await page.goto(origin + "/racun");
     }
     await login(ownerPage, 0);
+    await expect(ownerPage.getByRole("heading", { level: 1 })).toBeVisible();
+    await capture(ownerPage, "advertiser-dashboard");
     await ownerPage
       .getByRole("link", { name: "Moji oglasi", exact: true })
       .click();
+    await capture(ownerPage, "my-listings");
     await ownerPage
       .getByRole("button", { name: "+ Nov oglas", exact: true })
       .click();
@@ -99,29 +151,43 @@ export async function browserFlow({
     await ownerPage
       .getByLabel("Dodaj fotografijo", { exact: true })
       .setInputFiles({
-        name: "stanovanje.png",
-        mimeType: "image/png",
-        buffer: png,
+        name: "stanovanje.webp",
+        mimeType: "image/webp",
+        buffer: await readFile(
+          resolve(__dirname, "../../frontend/public/assets/interior.webp"),
+        ),
       });
     await expect(
       ownerPage.getByRole("button", { name: "Odstrani fotografijo" }),
     ).toBeVisible({ timeout: 15000 });
+    await capture(ownerPage, "listing-editor");
     await ownerPage
       .getByRole("button", { name: "Oddaj v pregled", exact: true })
       .click();
     await expect(
-      ownerPage.getByText("V pregledu", { exact: true }),
+      ownerPage
+        .locator(".detail-heading")
+        .getByText("V pregledu", { exact: true }),
     ).toBeVisible({ timeout: 15000 });
     const listingUrl = ownerPage.url();
     const adminContext = await browser.newContext();
     const admin = await adminContext.newPage();
     await login(admin, 4);
+    await capture(admin, "admin-dashboard");
     await admin
       .getByRole("link", { name: "Pregled oglasov", exact: true })
       .click();
+    await expect(
+      admin.getByRole("link").filter({ hasText: title }),
+    ).toBeVisible();
+    await capture(admin, "admin-queue");
     await admin.getByRole("link").filter({ hasText: title }).click();
+    await capture(admin, "admin-review");
     await admin
       .getByRole("button", { name: "Odobri objavo", exact: true })
+      .click();
+    await admin
+      .getByRole("button", { name: "Potrdi objavo", exact: true })
       .click();
     await expect(admin.getByText("Objavljen", { exact: true })).toBeVisible({
       timeout: 15000,
@@ -135,14 +201,23 @@ export async function browserFlow({
       timeout: 15000,
     });
     await mkdir(resolve(__dirname, "../../test-results"), { recursive: true });
-    const photoPreview=visitor.getByAltText("Fotografija nepremičnine").first();
-    await expect(photoPreview).toBeVisible({timeout:15000});
-    await expect.poll(()=>photoPreview.evaluate((image:HTMLImageElement)=>image.complete&&image.naturalWidth>0)).toBeTruthy();
+    const photoPreview = visitor
+      .getByAltText("Fotografija nepremičnine")
+      .first();
+    await expect(photoPreview).toBeVisible({ timeout: 15000 });
+    await expect
+      .poll(() =>
+        photoPreview.evaluate(
+          (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+        ),
+      )
+      .toBeTruthy();
     await visitor.screenshot({
       path: resolve(__dirname, "../../test-results/mvp-catalogue-mobile.png"),
       fullPage: true,
     });
     await visitor.getByRole("link").filter({ hasText: title }).click();
+    await capture(visitor, "property-detail");
     await expect(
       visitor.getByText("Browser private address", { exact: false }),
     ).toHaveCount(0);
@@ -174,6 +249,7 @@ export async function browserFlow({
       }),
     ).toBeVisible({ timeout: 15000 });
     await seeker
+      .getByRole("main")
       .getByRole("link", { name: "Moji ogledi", exact: true })
       .click();
     await expect(
@@ -183,6 +259,9 @@ export async function browserFlow({
     await ownerPage
       .getByRole("button", { name: "Potrdi ogled", exact: true })
       .click();
+    await ownerPage
+      .getByRole("button", { name: "Potrdi zahtevo", exact: true })
+      .click();
     await expect(ownerPage.getByText("Potrjeno", { exact: true })).toBeVisible({
       timeout: 15000,
     });
@@ -190,6 +269,20 @@ export async function browserFlow({
     await expect(
       seeker.getByText("Browser private address", { exact: true }),
     ).toBeVisible({ timeout: 15000 });
+    await capture(seeker, "seeker-viewings");
+    await seeker.goto(origin + "/racun");
+    await capture(seeker, "seeker-dashboard");
+    await seeker.goto(origin + "/profil");
+    await expect(
+      seeker.getByRole("heading", { name: "Vaš profil" }),
+    ).toBeVisible();
+    await seeker.getByLabel("Ime", { exact: true }).fill("Nika");
+    await seeker.getByRole("button", { name: "Shrani spremembe" }).click();
+    await expect(seeker.getByText("Profil je posodobljen.")).toBeVisible({
+      timeout: 15000,
+    });
+    await capture(seeker, "profile");
+    await seeker.goto(origin + "/moji-ogledi");
     await seeker.screenshot({
       path: resolve(
         __dirname,
@@ -197,15 +290,116 @@ export async function browserFlow({
       ),
       fullPage: true,
     });
+    // Published listings can be edited only after explicitly returning to draft.
+    await ownerPage.goto(origin + "/moji-oglasi");
+    const publishedRow = ownerPage.getByRole("row").filter({ hasText: title });
+    await expect(
+      publishedRow.getByRole("button", { name: "Uredi oglas", exact: true }),
+    ).toBeVisible();
+    await capture(ownerPage, "published-listing-actions");
+    await publishedRow
+      .getByRole("button", { name: "Uredi oglas", exact: true })
+      .click();
+    await ownerPage
+      .getByRole("dialog")
+      .getByRole("button", { name: "Prekliči", exact: true })
+      .click();
+    await visitor.goto(listingUrl);
+    await expect(
+      visitor.getByRole("heading", { name: title, exact: true }),
+    ).toBeVisible();
+    await publishedRow
+      .getByRole("button", { name: "Uredi oglas", exact: true })
+      .click();
+    await ownerPage
+      .getByRole("button", { name: "Začni urejanje", exact: true })
+      .click();
+    await expect(
+      ownerPage.getByRole("heading", { name: "Urejanje oglasa", exact: true }),
+    ).toBeVisible();
+    const publicApi = origin + "/api/properties/" + listingUrl.split("/").pop();
+    expect((await visitor.request.get(publicApi)).status()).toBe(404);
+    await visitor.reload();
+    await expect(
+      visitor.getByRole("heading", {
+        name: "Tega oglasa ni mogoče odpreti.",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await seeker.reload();
+    await expect(seeker.getByText("Potrjeno", { exact: true })).toBeVisible();
+    await expect(
+      seeker.getByText("Browser private address", { exact: true }),
+    ).toHaveCount(0);
+    const editedTitle = "Prenovljeno stanovanje " + prefix;
+    await ownerPage.getByLabel("Naslov", { exact: true }).fill(editedTitle);
+    await ownerPage.getByLabel("Cena (€)", { exact: true }).fill("190000");
+    await ownerPage
+      .getByRole("button", { name: "Shrani osnutek", exact: true })
+      .click();
+    await expect(
+      ownerPage.getByText("Osnutek je shranjen.", { exact: true }),
+    ).toBeVisible();
+    await ownerPage.reload();
+    await expect(ownerPage.getByLabel("Naslov", { exact: true })).toHaveValue(
+      editedTitle,
+    );
+    await ownerPage
+      .getByRole("button", { name: "Oddaj v pregled", exact: true })
+      .click();
+    await expect(
+      ownerPage
+        .locator(".detail-heading")
+        .getByText("V pregledu", { exact: true }),
+    ).toBeVisible();
+    expect((await visitor.request.get(publicApi)).status()).toBe(404);
+    await seeker.reload();
+    await expect(
+      seeker.getByRole("heading", {
+        name: "Oglas je začasno v urejanju",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(seeker.getByText(editedTitle, { exact: true })).toHaveCount(0);
+    await admin.goto(origin + "/pregled");
+    await admin.getByRole("link").filter({ hasText: editedTitle }).click();
+    await admin
+      .getByRole("button", { name: "Odobri objavo", exact: true })
+      .click();
+    await admin
+      .getByRole("button", { name: "Potrdi objavo", exact: true })
+      .click();
+    await expect(
+      admin.locator(".detail-heading").getByText("Objavljen", { exact: true }),
+    ).toBeVisible();
+    await visitor.goto(listingUrl);
+    await expect(
+      visitor.getByRole("heading", { name: editedTitle, exact: true }),
+    ).toBeVisible();
+    await expect(visitor.locator(".detail-price strong")).toContainText(
+      "190.000",
+    );
+    await seeker.reload();
+    await expect(
+      seeker.getByText("Browser private address", { exact: true }),
+    ).toBeVisible();
+    await ownerPage.goto(listingUrl);
+    await ownerPage
+      .getByRole("button", { name: "Zaključi oglas", exact: true })
+      .click();
     await ownerPage
       .getByLabel("Potrjujem zaključek in preklic prihodnjih ogledov.", {
         exact: true,
       })
       .check();
     await ownerPage
-      .getByRole("button", { name: "Zaključi oglas", exact: true })
+      .getByRole("button", { name: "Potrdi zaključek", exact: true })
       .click();
-    await expect(ownerPage.getByText("Umaknjen", { exact: true })).toBeVisible({
+    await expect(
+      ownerPage
+        .locator(".detail-heading")
+        .getByText("Umaknjen", { exact: true }),
+    ).toBeVisible({
       timeout: 15000,
     });
     await expect(
@@ -226,8 +420,9 @@ export async function browserFlow({
       ownerPage.getByRole("heading", { name: "Prijavite se v Domoro" }),
     ).toBeVisible();
     console.log(
-      "Browser: login, draft form, photo upload, review, public catalogue, booking, confirmation, private address, closure and logout passed.",
+      "Browser: login, draft form, photo upload, review, public catalogue, booking, confirmation, private address, published edits with reapproval, closure and logout passed.",
     );
+    expect(browserErrors).toEqual([]);
   } finally {
     await browser?.close();
     vite.kill();

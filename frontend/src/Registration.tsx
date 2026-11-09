@@ -1,4 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  KeyRound,
+  LoaderCircle,
+  Mail,
+  Search,
+} from "lucide-react";
+import { AuthLayout, PasswordInput } from "./ui";
 
 type Result = { message: string; requiresEmailConfirmation: boolean };
 const fields = [
@@ -24,37 +34,20 @@ const fields = [
     type: "email",
     max: 254,
   },
-  {
-    name: "password",
-    label: "Geslo",
-    autoComplete: "new-password",
-    type: "password",
-    max: 128,
-  },
+  { name: "password", label: "Geslo", autoComplete: "new-password", max: 128 },
 ];
-
-function HouseIcon() {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path
-        d="m5 14 11-9 11 9v13H19v-9h-6v9H5Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function Registration() {
-  const [role, setRole] = useState("SEEKER");
+  const [role, setRole] = useState(() =>
+    new URLSearchParams(window.location.search).get("role") === "ADVERTISER"
+      ? "ADVERTISER"
+      : "SEEKER",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const successHeading = useRef<HTMLHeadingElement>(null);
   const errorSummary = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const fragment = new URLSearchParams(window.location.hash.slice(1));
     if (fragment.get("type") === "signup" && fragment.has("access_token")) {
@@ -68,23 +61,19 @@ export function Registration() {
         "Potrditvena povezava ni veljavna ali je potekla. Preverite zadnje prejeto sporočilo.",
       );
     }
-    // US-02 will manage sessions. Never retain callback tokens in the URL.
-    if (fragment.has("access_token") || fragment.has("error")) {
+    if (fragment.has("access_token") || fragment.has("error"))
       window.history.replaceState(
         null,
         "",
         window.location.pathname + window.location.search,
       );
-    }
   }, []);
-
   useEffect(() => {
     if (result) successHeading.current?.focus();
   }, [result]);
   useEffect(() => {
     if (message) errorSummary.current?.focus();
   }, [message]);
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
@@ -121,216 +110,167 @@ export function Registration() {
       setPending(false);
     }
   }
-
   return (
-    <div className="page">
-      <header className="header">
-        <a className="brand" href="/" aria-label="Domora – začetna stran">
-          <span className="brand-mark">
-            <HouseIcon />
+    <AuthLayout mode="register">
+      {result ? (
+        <div className="auth-success">
+          <span className="success-orbit">
+            {result.requiresEmailConfirmation ? (
+              <Mail size={31} />
+            ) : (
+              <CheckCircle2 size={31} />
+            )}
           </span>
-          domora<span className="brand-dot">.</span>
-        </a>
-        <span className="header-note">
-          <span className="small-dot" /> Vaš naslednji korak do doma
-        </span>
-      </header>
-      <main className="layout">
-        <aside className="intro" aria-labelledby="intro-title">
-          <span className="eyebrow">PROSTOR ZA NOVE ZAČETKE</span>
-          <h1 id="intro-title">
-            Vsak dom ima <br />
-            svojo zgodbo.
-            <br />
-            <em>Začnite svojo.</em>
+          <p className="eyebrow">DOBRODOŠLI V DOMORI</p>
+          <h1 ref={successHeading} tabIndex={-1}>
+            {result.requiresEmailConfirmation
+              ? "Preverite svoj e-poštni nabiralnik."
+              : "Vaš račun je pripravljen."}
           </h1>
-          <p className="intro-copy">
-            Poiščite prostor zase ali pomagajte nekomu najti njegovega. Vse se
-            začne z vašim računom.
-          </p>
-          <div className="neighborhood" aria-hidden="true">
-            <div className="sun" />
-            <div className="building building-one">
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <div className="building building-two">
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <i />
-              <b />
-            </div>
-            <div className="building building-three">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <div className="tree">
-              <span />
-            </div>
-            <div className="ground" />
-          </div>
-          <div className="intro-footer">
-            <span className="tiny-house">
-              <HouseIcon />
-            </span>
-            <p>
-              Manj iskanja.
-              <br />
-              <strong>Več občutka, da ste doma.</strong>
+          <p>{result.message}</p>
+          {result.requiresEmailConfirmation && (
+            <p className="lead-muted">
+              Odprite potrditveno povezavo v sporočilu. Če ga ne najdete,
+              preverite tudi vsiljeno pošto.
             </p>
-          </div>
-        </aside>
-        <section className="form-panel" aria-labelledby="form-title">
-          {result ? (
-            <div className="success">
-              <span className="success-icon" aria-hidden="true">
-                ✓
-              </span>
-              <span className="eyebrow">DOBRODOŠLI V DOMORI</span>
-              <h2 id="form-title" ref={successHeading} tabIndex={-1}>
-                {result.requiresEmailConfirmation
-                  ? "Preverite svoj e-poštni nabiralnik."
-                  : "Vaš račun je pripravljen."}
-              </h2>
-              <p>{result.message}</p>
-              {result.requiresEmailConfirmation && (
-                <p className="muted">
-                  Odprite potrditveno povezavo v sporočilu. Če ga ne najdete,
-                  preverite tudi vsiljeno pošto.
-                </p>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="form-heading">
-                <span className="eyebrow">VAŠ NOVI ZAČETEK</span>
-                <h2 id="form-title">Ustvarite račun</h2>
-                <p>Nekaj podatkov in korak bližje ste svojemu cilju.</p>
-              </div>
-              <form
-                onSubmit={submit}
-                aria-label="Registracija"
-                aria-busy={pending}
-              >
-                <fieldset className="role-fieldset" disabled={pending}>
-                  <legend>Kako boste uporabljali Domoro?</legend>
-                  <div className="roles">
-                    <label
-                      className={`role-option ${role === "SEEKER" ? "selected" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value="SEEKER"
-                        checked={role === "SEEKER"}
-                        onChange={() => setRole("SEEKER")}
-                      />
-                      <span>
-                        <strong>Iščem nepremičnino</strong>
-                        <small>Prostor za moje načrte</small>
-                      </span>
-                    </label>
-                    <label
-                      className={`role-option ${role === "ADVERTISER" ? "selected" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value="ADVERTISER"
-                        checked={role === "ADVERTISER"}
-                        onChange={() => setRole("ADVERTISER")}
-                      />
-                      <span>
-                        <strong>Oglašujem nepremičnino</strong>
-                        <small>Priložnost za nov začetek</small>
-                      </span>
-                    </label>
-                  </div>
-                  {errors.role && <p className="field-error">{errors.role}</p>}
-                </fieldset>
-                {message && (
-                  <div
-                    className="error-summary"
-                    role="alert"
-                    ref={errorSummary}
-                    tabIndex={-1}
-                  >
-                    {message}
-                  </div>
-                )}
-                <div className="fields">
-                  {fields.map((field) => (
-                    <div
-                      key={field.name}
-                      className={`field ${["email", "password"].includes(field.name) ? "wide" : ""}`}
-                    >
-                      <label htmlFor={field.name}>{field.label}</label>
-                      <input
-                        id={field.name}
-                        name={field.name}
-                        type={field.type || "text"}
-                        autoComplete={field.autoComplete}
-                        required
-                        maxLength={field.max}
-                        minLength={field.name === "password" ? 8 : undefined}
-                        disabled={pending}
-                        aria-invalid={!!errors[field.name]}
-                        aria-describedby={
-                          errors[field.name]
-                            ? `${field.name}-error`
-                            : field.name === "password"
-                              ? "password-hint"
-                              : undefined
-                        }
-                      />
-                      {errors[field.name] ? (
-                        <p id={`${field.name}-error`} className="field-error">
-                          {errors[field.name]}
-                        </p>
-                      ) : (
-                        field.name === "password" && (
-                          <p id="password-hint" className="hint">
-                            Uporabite vsaj 8 znakov.
-                          </p>
-                        )
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className="submit-button"
-                  type="submit"
-                  disabled={pending}
-                >
-                  {pending ? (
-                    "Ustvarjanje računa …"
-                  ) : (
-                    <>
-                      Ustvari račun <span aria-hidden="true">↗</span>
-                    </>
-                  )}
-                </button>
-                <p className="form-note">
-                  Vaši kontaktni podatki so del vašega zasebnega profila.
-                </p>
-              </form>
-            </>
           )}
-        </section>
-      </main>
-      <footer className="page-footer">
-        <span>Domora · Nepremičnine in novi začetki</span>
-        <span>Narejeno za vaš naslednji korak.</span>
-      </footer>
-    </div>
+          <a className="button button-primary" href="/prijava">
+            Na prijavo <ArrowRight size={17} />
+          </a>
+          <a className="text-link" href="/nepremicnine">
+            Raziščite nepremičnine
+          </a>
+        </div>
+      ) : (
+        <>
+          <p className="eyebrow">VAŠ NOVI ZAČETEK</p>
+          <h1>
+            Ustvarite račun<span className="sage-period">.</span>
+          </h1>
+          <p className="auth-description">
+            En račun. Več možnosti za vaš naslednji korak.
+          </p>
+          <form onSubmit={submit} aria-label="Registracija" aria-busy={pending}>
+            <fieldset className="role-fieldset" disabled={pending}>
+              <legend>Kako boste uporabljali Domoro?</legend>
+              <div className="role-options">
+                {[
+                  {
+                    value: "SEEKER",
+                    title: "Iščem nepremičnino",
+                    note: "Iskalec nepremičnine",
+                    Icon: Search,
+                  },
+                  {
+                    value: "ADVERTISER",
+                    title: "Oglašujem nepremičnino",
+                    note: "Oglaševalec",
+                    Icon: Building2,
+                  },
+                ].map(({ value, title, note, Icon }) => (
+                  <label
+                    key={value}
+                    className={`role-card ${role === value ? "selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={value}
+                      checked={role === value}
+                      onChange={() => setRole(value)}
+                    />
+                    <Icon size={21} strokeWidth={1.5} />
+                    <strong>{title}</strong>
+                    <small>{note}</small>
+                  </label>
+                ))}
+              </div>
+              {errors.role && <p className="field-error">{errors.role}</p>}
+            </fieldset>
+            {message && (
+              <div
+                className="notice notice-error"
+                role="alert"
+                ref={errorSummary}
+                tabIndex={-1}
+              >
+                {message}
+              </div>
+            )}
+            <div className="form-grid">
+              {fields.map((field) => (
+                <div
+                  className={`field ${["email", "password"].includes(field.name) ? "field-full" : ""}`}
+                  key={field.name}
+                >
+                  <label htmlFor={field.name}>{field.label}</label>
+                  {field.name === "password" ? (
+                    <PasswordInput
+                      id={field.name}
+                      name={field.name}
+                      autoComplete={field.autoComplete}
+                      required
+                      minLength={8}
+                      maxLength={field.max}
+                      disabled={pending}
+                      aria-invalid={!!errors[field.name]}
+                      aria-describedby={
+                        errors[field.name]
+                          ? `${field.name}-error`
+                          : "password-hint"
+                      }
+                    />
+                  ) : (
+                    <input
+                      id={field.name}
+                      name={field.name}
+                      type={field.type || "text"}
+                      autoComplete={field.autoComplete}
+                      required
+                      maxLength={field.max}
+                      disabled={pending}
+                      aria-invalid={!!errors[field.name]}
+                      aria-describedby={
+                        errors[field.name] ? `${field.name}-error` : undefined
+                      }
+                    />
+                  )}{" "}
+                  {errors[field.name] ? (
+                    <p id={`${field.name}-error`} className="field-error">
+                      {errors[field.name]}
+                    </p>
+                  ) : (
+                    field.name === "password" && (
+                      <p id="password-hint" className="field-hint">
+                        <KeyRound size={12} /> Vsaj 8 znakov za varen začetek.
+                      </p>
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              className="button button-primary button-full"
+              type="submit"
+              disabled={pending}
+            >
+              {pending ? (
+                <>
+                  <LoaderCircle size={17} className="spin" />
+                  Ustvarjanje računa …
+                </>
+              ) : (
+                <>
+                  Ustvari račun <ArrowRight size={17} />
+                </>
+              )}
+            </button>
+          </form>
+          <p className="auth-switch">
+            Že imate račun? <a href="/prijava">Prijavite se</a>
+          </p>
+        </>
+      )}
+    </AuthLayout>
   );
 }
