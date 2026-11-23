@@ -6,10 +6,8 @@ import {
   Building2,
   CalendarCheck2,
   CalendarDays,
-  Check,
   Clock3,
   FileCheck2,
-  FileText,
   House,
   Plus,
   ShieldCheck,
@@ -22,7 +20,7 @@ import {
   type PersonalRequest,
   type ReceivedRequest,
 } from "./data";
-import { Badge, EmptyState, Loading, Notice, PageHeading, money } from "./ui";
+import { Badge, EmptyState, Loading, Notice, money } from "./ui";
 import { formatTime } from "./Viewings";
 import { Photo, PhotoFallback } from "./Listings";
 

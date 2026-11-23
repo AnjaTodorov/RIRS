@@ -9,6 +9,7 @@
   "scripts": {
     "admin:promote": "npm run admin:promote -w backend --",
     "dev": "concurrently --kill-others -n api,web \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "lint": "eslint .",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "test:integration": "npm run test:integration -w backend",
@@ -18,9 +19,14 @@
     "db:status": "npm run db:status -w backend"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.56.1",
     "concurrently": "^9.2.1",
-    "node": "^22.21.1"
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "node": "^22.21.1",
+    "typescript-eslint": "^8.73.0"
   },
   "overrides": {
     "deepmerge-ts": "^8.0.0"

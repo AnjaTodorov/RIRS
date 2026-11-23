@@ -25,7 +25,6 @@ import {
   Settings2,
   ShieldCheck,
   UserRound,
-  X,
   LoaderCircle,
   KeyRound,
 } from "lucide-react";
@@ -329,7 +328,7 @@ function Footer() {
   );
 }
 function Shell() {
-  const { profile, client, session, loading, error } = useSession();
+  const { profile, client, session, error } = useSession();
   const location = useLocation();
   const [mobile, setMobile] = useState(false);
   const [signOutError, setSignOutError] = useState("");

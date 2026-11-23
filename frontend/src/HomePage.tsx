@@ -10,7 +10,6 @@ import {
   Home,
   House,
   MapPin,
-  MoveUpRight,
   Search,
   ShieldCheck,
   Sparkles,

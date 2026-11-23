@@ -1,0 +1,92 @@
+Namen naloge
+
+Naloga je razdeljena na dva dela. V prvem delu bomo izvedli menjavo projektov. V drugem delu na prevzetem projektu vzpostavite CI/CD cevovod z GitHub Actions. Cevovod ob vsaki spremembi samodejno preveri kakovost kode (lint), zgradi aplikacijo in zažene teste. Ob združitvi v main aplikacijo samodejno namesti na izbrano storitev.
+1. Menjava projektov
+
+Po vajah bo objavljena tabela z razporeditvijo menjav projektov. Repozitorij projekta, ki vam je dodeljen, forkajte v svoj GitHub račun (gumb Fork na strani repozitorija). Drugi del naloge nato izvajate v svojem forku. Prek forka je razvidno, kdo je prevzel posamezen projekt, spremembe pa je kasneje mogoče preprosto združiti nazaj v izvorni repozitorij s pull requestom.
+
+Na prevzetem projektu najprej pregledajte implementirane funkcionalnosti. V mapi docs/ pripravite datoteko 07-pregled-projekta.md, v kateri na kratko zapišite:
+
+    katere funkcionalnosti so bile uspešno implementirane za MVP,
+    ali implementirane funkcionalnosti zadoščajo uporabniškim zgodbam (preglejte 5 uporabniških zgodb).
+
+Poleg priprave dokumenta je namen tega dela, da se s prevzetim projektom podrobno seznanite: preglejte dokumentacijo, arhitekturne odločitve in kodo ter aplikacijo lokalno zaženite.
+2. CI/CD z GitHub Actions
+
+Na prevzetem projektu uporabljajte ustrezno strategijo razvoja: spremembe razvijajte v ločenih vejah in jih v main združujte prek pull requestov.
+
+Pozor: GitHub Actions so v forkih privzeto onemogočene. Omogočite jih v zavihku Actions vašega forka. Prav tako preverite zaščite vej.
+2.1 Priprava workflowa
+
+V repozitoriju ustvarite direktorij .github/workflows/ in v njem datoteko ci-cd.yml:
+
+projekt/
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+├── ...
+
+Workflow naj se sproži:
+
+    ob vsakem pull requestu v vejo main (pull_request),
+    ob vsakem pushu na vejo main (push).
+
+Za začetek si lahko ogledate GitHub Actions Quickstart.
+2.2 Lint
+
+Dodajte job lint, ki preveri slog in kakovost kode za frontend in backend.
+
+    Uporabite orodje, ki ustreza vaši tehnologiji, npr. ESLint (JavaScript/TypeScript), Ruff ali Flake8 (Python), Checkstyle (Java), dotnet format (.NET).
+    Konfiguracijo linterja dodajte v repozitorij (npr. eslint.config.js, pyproject.toml).
+    Če linter najde napake, mora job pasti.
+
+2.3 Gradnja in caching
+
+Dodajte job build, ki zgradi frontend in backend.
+
+    Implementirajte predpomnjenje (caching) odvisnosti, da pospešite njihovo namestitev ob ponovnih zagonih cevovoda.
+        Node.js: npm cache (npr. actions/setup-node z opcijo cache) oziroma node_modules z uporabo actions/cache.
+        Python: pip cache ali .venv,
+        Java: ~/.m2 (Maven) ali ~/.gradle (Gradle).
+    Rezultate gradnje oziroma datoteke, potrebne za namestitev aplikacije, shranite kot artefakte z actions/upload-artifact, npr. frontend dist/ in backend build/ oziroma ustrezen paket aplikacije.
+
+Več o cachingu: actions/cache.
+2.4 Testi
+
+Dodajte job test, ki zažene teste za frontend in backend.
+
+    Napišite vsaj 15 osnovnih testov skupno za frontend in backend, npr. enotskih testov poslovne logike, validacij ali API končnih točk.
+    Poročilo o pokritosti kode shranite kot artefakt.
+    Če kateri koli test pade, mora pasti tudi cevovod.
+
+2.5 Namestitev (deploy)
+
+Dodajte job deploy, ki aplikacijo namesti na izbrano storitev.
+
+    Deploy naj se izvede samo ob pushu na main in samo, če so uspešno zaključeni jobi lint, build in test (uporabite needs in pogoj if).
+    Pri namestitvi uporabite artefakte iz joba build (npr. z actions/download-artifact). Aplikacije v jobu deploy ne gradite ponovno.
+    Izberite storitev, npr.:
+        frontend: Vercel, Netlify, GitHub Pages, Cloudflare Pages, Firebase Hosting,
+        backend: Render, Railway, Fly.io, Azure App Service.
+    Tokene in gesla shranite kot GitHub Secrets. Ne zapisujte jih v kodo.
+    V repozitoriju ustvarite okolje (Settings → Environments) z imenom production in ga uporabite v jobu deploy. Secrets za namestitev shranite kot secrets tega okolja. Navodila za okolja
+    Poskrbite, da je frontend povezan z nameščenim backendom (URL backenda nastavite prek okoljske spremenljivke). Če aplikacija uporablja lokalno podatkovno bazo, namestite tudi njo.
+    Aplikacija mora biti po namestitvi dejansko dostopna na javnem URL-ju.
+
+2.6 Povezava z zaščito veje
+
+V pravilu za zaščito veje main vklopite še:
+
+    Require status checks to pass before merging: kot obvezne preverbe izberite jobe lint, build in test.
+
+Na ta način pull requesta s padajočim cevovodom ni mogoče združiti. Za preverjanje izvedite vsaj en pull request, v katerem cevovod pade (npr. namerna napaka linterja), in ga nato popravite.
+2.7 README
+
+V README.md dodajte:
+
+    značko statusa workflowa,
+    povezavo do nameščene aplikacije,
+    kratek opis faz cevovoda.
+
+
+domorapass1!

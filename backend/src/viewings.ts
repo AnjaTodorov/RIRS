@@ -175,7 +175,7 @@ export function createViewingsRouter(deps: ApiDependencies) {
     res.json(requestView(value));
   });
   router.get("/properties/:id/requests", async (req, res) => {
-    const user = viewer(res, ["ADVERTISER"]);
+    viewer(res, ["ADVERTISER"]);
     const p = await deps.db.property.findUnique({
       where: { id: id(req.params.id) },
     });

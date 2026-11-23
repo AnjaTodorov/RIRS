@@ -9,7 +9,7 @@ export async function browserFlow({
   emails,
   password,
   prefix,
-  png,
+  png: _png,
 }: {
   apiUrl: string;
   emails: string[];

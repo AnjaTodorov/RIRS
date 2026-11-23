@@ -7,10 +7,8 @@ import {
   CalendarClock,
   CalendarDays,
   Check,
-  CheckCircle2,
   ChevronDown,
   Clock3,
-  Eye,
   LoaderCircle,
   LockKeyhole,
   MapPin,
@@ -19,7 +17,6 @@ import {
   Send,
   ShieldCheck,
   TriangleAlert,
-  UserRound,
   X,
 } from "lucide-react";
 import { useSession, request } from "./session";
@@ -39,7 +36,6 @@ import {
   Modal,
   Notice,
   PageHeading,
-  money,
   statusLabels,
 } from "./ui";
 
